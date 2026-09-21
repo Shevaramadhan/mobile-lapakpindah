@@ -35,6 +35,25 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # State management (MVVM ViewModel layer)
+  provider: ^6.1.2
+
+  # SQLite local database
+  sqflite: ^2.4.1
+  path_provider: ^2.1.5
+
+  # Font Poppins
+  google_fonts: ^6.2.1
+
+  # Remember device session
+  shared_preferences: ^2.3.4
+
+  # Currency formatting (Rp)
+  intl: ^0.19.0
+
+  # Path utilities for database
+  path: ^1.9.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
