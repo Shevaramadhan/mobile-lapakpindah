@@ -7,7 +7,8 @@ import 'package:lapakpindah/core/widgets/custom_button.dart';
 import 'package:lapakpindah/core/widgets/custom_text_field.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/auth/register_placeholder_screen.dart';
-import 'package:lapakpindah/modules/dashboard/main_navigation_screen.dart';
+import 'package:lapakpindah/routes/app_routes.dart'; // named routes
+import 'package:lapakpindah/utils/validators.dart'; // (1) import Validators
 
 /// Screen login LapakPindah.
 class LoginScreen extends StatefulWidget {
@@ -30,35 +31,12 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final viewModel = context.read<AuthViewModel>();
-    final success = await viewModel.login(
-      _identifierController.text.trim(),
-      _passwordController.text.trim(),
-    );
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const MainNavigationScreen(),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Login gagal. Periksa kembali nomor/email dan kata sandi.',
-            style: AppTextStyles.bodySmall(color: AppColors.onPrimary),
-          ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+  // (3) _submit: dijalankan saat tombol Masuk ditekan
+  void _submit() {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+    // Form valid → pindah ke Home, Login dibuang dari stack
+    Navigator.pushReplacementNamed(context, AppRoutes.home);
   }
 
   @override
@@ -73,6 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode
+                .onUserInteraction, // (4) validasi otomatis saat user mengetik
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,10 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('LapakPindah', style: AppTextStyles.titleLarge()),
-            Text(
-              'Manajemen UMKM Keliling',
-              style: AppTextStyles.labelSmall(),
-            ),
+            Text('Manajemen UMKM Keliling', style: AppTextStyles.labelSmall()),
           ],
         ),
       ],
@@ -143,12 +120,11 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _identifierController,
               prefixIcon: Icons.phone_outlined,
               keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Masukkan nomor WA atau email';
-                }
-                return null;
-              },
+              validator: (value) => Validators.requiredField(
+                // (5) validator dari Validators
+                value,
+                fieldName: 'Nomor WA atau Email',
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -178,23 +154,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Masukkan kata sandi atau PIN';
-                }
-                if (value.trim().length < 6) {
-                  return 'Minimal 6 karakter';
-                }
-                return null;
-              },
+              validator: (value) => Validators.minLength(
+                // (5) validator dari Validators
+                value,
+                6,
+                fieldName: 'Kata sandi atau PIN',
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
 
             // Checkbox: Ingat perangkat
             GestureDetector(
-              onTap: () => viewModel.toggleRememberDevice(
-                !viewModel.rememberDevice,
-              ),
+              onTap: () =>
+                  viewModel.toggleRememberDevice(!viewModel.rememberDevice),
               child: Row(
                 children: [
                   SizedBox(
@@ -209,9 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(2),
                       ),
-                      side: const BorderSide(
-                        color: AppColors.inputBorder,
-                      ),
+                      side: const BorderSide(color: AppColors.inputBorder),
                     ),
                   ),
                   const SizedBox(width: 9),
@@ -229,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
               label: 'Masuk ke Lapak',
               icon: Icons.login,
               isLoading: viewModel.isLoading,
-              onPressed: _handleLogin,
+              onPressed: _submit, // (6) tombol memanggil _submit
             ),
           ],
         );
@@ -240,19 +210,13 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Footer: "Belum punya akun? Daftar gratis"
   Widget _buildBottomFooter() {
     return Padding(
-      padding: const EdgeInsets.only(
-        top: AppSpacing.sm,
-        bottom: AppSpacing.xs,
-      ),
+      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xs),
       child: Center(
         child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              'Belum punya akun? ',
-              style: AppTextStyles.bodyMedium(),
-            ),
+            Text('Belum punya akun? ', style: AppTextStyles.bodyMedium()),
             GestureDetector(
               onTap: () {
                 Navigator.of(context).push(
@@ -263,9 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
               },
               child: Text(
                 'Daftar gratis',
-                style: AppTextStyles.labelMedium(
-                  color: AppColors.primaryDark,
-                ),
+                style: AppTextStyles.labelMedium(color: AppColors.primaryDark),
               ),
             ),
           ],
