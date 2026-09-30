@@ -8,6 +8,15 @@ import 'package:lapakpindah/core/widgets/action_card_button.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/dashboard/dashboard_view_model.dart';
 
+import '../../routes/app_routes.dart'; // Buka komentar/tambahkan baris ini
+
+import 'package:lapakpindah/models/lapak.dart';
+import 'package:lapakpindah/data/lapak_repository.dart';
+import 'package:lapakpindah/widgets/state_views.dart';
+
+// (1) Status tampilan layar
+enum ViewStatus { loading, success, error }
+
 /// Screen beranda/dashboard LapakPindah.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onNavigateToTab});
@@ -20,13 +29,48 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // (2) Variabel State untuk Langkah 5
+  final _repository = LapakRepository();
+  ViewStatus _status = ViewStatus.loading;
+  List<Lapak> _items = [];
+  String _errorMessage = '';
+  bool _simulateError = false; // Untuk menguji ErrorView
+
   @override
   void initState() {
     super.initState();
-    // Load data saat screen pertama kali dibuka
+    // Load data summary dashboard asli
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DashboardViewModel>().loadTodaySummary();
     });
+    
+    // (3) Ambil data dummy lokasi saat layar pertama dibuka
+    _loadItems();
+  }
+
+  // (4) Mengambil data + menangani error dengan try-catch
+  Future<void> _loadItems() async {
+    if (_status != ViewStatus.loading) {
+      setState(() => _status = ViewStatus.loading);
+    }
+
+    try {
+      final items = await _repository.fetchItems(simulateError: _simulateError);
+      
+      // Pemeriksaan mounted sebelum setState
+      if (!mounted) return;
+
+      setState(() {
+        _items = items;
+        _status = ViewStatus.success;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _status = ViewStatus.error;
+      });
+    }
   }
 
   /// Format angka ke Rupiah: 400000 → "Rp 400.000"
@@ -44,20 +88,86 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceBackground,
       appBar: _buildAppBar(),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildGreetingHeader(),
-            _buildRevenueSummaryCard(),
-            _buildActionButtons(),
-          ],
-        ),
+      // (5) Isi layar diganti menjadi pemanggilan _buildContent
+      body: _buildContent(), 
+    );
+  }
+
+  // (6) Memilih tampilan: loading / error / success
+  Widget _buildContent() {
+    return switch (_status) {
+      ViewStatus.loading => const LoadingView(message: 'Memuat data lapak...'),
+      ViewStatus.error => ErrorView(message: _errorMessage, onRetry: _loadItems),
+      ViewStatus.success => _buildDashboardWithList(),
+    };
+  }
+
+  // Menggabungkan dashboard asli dengan list lokasi lapak
+  Widget _buildDashboardWithList() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
       ),
+      children: [
+        _buildGreetingHeader(),
+        const SizedBox(height: AppSpacing.md),
+        _buildRevenueSummaryCard(),
+        const SizedBox(height: AppSpacing.md),
+        _buildActionButtons(),
+        const SizedBox(height: AppSpacing.lg),
+        
+        // Judul untuk Daftar Lokasi
+        Text('Daftar Lokasi Jualan', style: AppTextStyles.heading2()),
+        const SizedBox(height: AppSpacing.sm),
+        
+        // Menampilkan daftar data dummy
+        _buildList(),
+      ],
+    );
+  }
+
+  Widget _buildList() {
+    if (_items.isEmpty) {
+      return const EmptyView(message: 'Belum ada data lokasi lapak.');
+    }
+    
+    return ListView.builder(
+      shrinkWrap: true, // Wajib agar tidak error di dalam ListView utama
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+          color: AppColors.surfaceCard,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AppColors.inputBorder),
+            borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
+          ),
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.storefront, color: AppColors.primaryDark),
+            ),
+            title: Text(item.title, style: AppTextStyles.titleSmall()),
+            subtitle: Text(item.subtitle, style: AppTextStyles.bodySmall()),
+            trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.detail,
+                arguments: item,
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -79,9 +189,26 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       actions: [
+        // Menu untuk simulasi error (memenuhi syarat Langkah 5)
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+          onSelected: (value) {
+            if (value == 'error') {
+              setState(() => _simulateError = !_simulateError);
+              _loadItems();
+            }
+          },
+          itemBuilder: (context) => [
+            CheckedPopupMenuItem(
+              value: 'error',
+              checked: _simulateError,
+              child: const Text('Simulasikan Error'),
+            ),
+          ],
+        ),
         Padding(
           padding: const EdgeInsets.only(right: AppSpacing.lg),
-          child: Icon(
+          child: const Icon(
             Icons.notifications_outlined,
             color: AppColors.textSecondary,
             size: 21,

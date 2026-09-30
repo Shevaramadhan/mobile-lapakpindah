@@ -7,7 +7,11 @@ import 'package:lapakpindah/core/widgets/custom_button.dart';
 import 'package:lapakpindah/core/widgets/custom_text_field.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/auth/register_placeholder_screen.dart';
-import 'package:lapakpindah/modules/dashboard/main_navigation_screen.dart';
+
+// Import utilitas dari praktikum
+import '../../utils/validators.dart';
+// Import routing dari Langkah 6
+import '../../routes/app_routes.dart'; 
 
 /// Screen login LapakPindah.
 class LoginScreen extends StatefulWidget {
@@ -31,8 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    // 1. Validasi form terlebih dahulu sesuai Langkah 4
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
 
+    // 2. Pindah ke layar Home menggunakan Named Route (Sesuai Langkah 6)
+    // SnackBar dihapus karena jika berhasil, layar harus langsung pindah
+    Navigator.pushReplacementNamed(context, AppRoutes.home);
+
+    /* --- KODE ASLI VIEWMODEL (Disimpan agar tidak hilang untuk tugas akhir) ---
     final viewModel = context.read<AuthViewModel>();
     final success = await viewModel.login(
       _identifierController.text.trim(),
@@ -42,11 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const MainNavigationScreen(),
-        ),
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -59,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     }
+    */
   }
 
   @override
@@ -73,6 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +136,6 @@ class _LoginScreenState extends State<LoginScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Headline
             Text('Masuk ke Akun', style: AppTextStyles.heading1()),
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -143,19 +151,14 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _identifierController,
               prefixIcon: Icons.phone_outlined,
               keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Masukkan nomor WA atau email';
-                }
-                return null;
-              },
+              validator: (value) => Validators.requiredField(value, fieldName: 'Nomor WA atau Email'),
             ),
             const SizedBox(height: AppSpacing.md),
 
             // Input 2: Password/PIN
             LapakTextField(
               label: 'Kata sandi atau PIN',
-              hintText: 'Masukkan sandi atau PIN 6 digit',
+              hintText: 'Minimal 8 karakter', 
               controller: _passwordController,
               prefixIcon: Icons.lock_outline,
               obscureText: _obscurePassword,
@@ -178,23 +181,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Masukkan kata sandi atau PIN';
-                }
-                if (value.trim().length < 6) {
-                  return 'Minimal 6 karakter';
-                }
-                return null;
-              },
+              validator: Validators.password,
             ),
             const SizedBox(height: AppSpacing.md),
 
             // Checkbox: Ingat perangkat
             GestureDetector(
-              onTap: () => viewModel.toggleRememberDevice(
-                !viewModel.rememberDevice,
-              ),
+              onTap: () => viewModel.toggleRememberDevice(!viewModel.rememberDevice),
               child: Row(
                 children: [
                   SizedBox(
