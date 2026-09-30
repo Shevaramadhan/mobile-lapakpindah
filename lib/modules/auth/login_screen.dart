@@ -7,7 +7,8 @@ import 'package:lapakpindah/core/widgets/custom_button.dart';
 import 'package:lapakpindah/core/widgets/custom_text_field.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/auth/register_placeholder_screen.dart';
-import 'package:lapakpindah/modules/dashboard/main_navigation_screen.dart';
+import 'package:lapakpindah/utils/validators.dart';
+import 'package:lapakpindah/routes/app_routes.dart';
 
 /// Screen login LapakPindah.
 class LoginScreen extends StatefulWidget {
@@ -42,11 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const MainNavigationScreen(),
-        ),
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -139,16 +136,14 @@ class _LoginScreenState extends State<LoginScreen> {
             // Input 1: WA/Email
             LapakTextField(
               label: 'Nomor WhatsApp atau Email',
-              hintText: '0812-xxxx-xxxx atau email',
+              hintText: '0812-xxxx-xxxx',
               controller: _identifierController,
               prefixIcon: Icons.phone_outlined,
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Masukkan nomor WA atau email';
-                }
-                return null;
-              },
+              keyboardType: TextInputType.number, // Hanya angka
+              validator: (value) => Validators.numericOnly(
+                value,
+                fieldName: 'Nomor WA',
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -178,15 +173,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Masukkan kata sandi atau PIN';
-                }
-                if (value.trim().length < 6) {
-                  return 'Minimal 6 karakter';
-                }
-                return null;
-              },
+              // TUGAS: Memakai fungsi password dari validators.dart
+              validator: Validators.password,
             ),
             const SizedBox(height: AppSpacing.md),
 

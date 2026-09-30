@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:lapakpindah/core/database/db_helper.dart';
+// import 'package:lapakpindah/core/database/db_helper.dart';
 
-/// ViewModel dashboard — MVVM pattern.
+/// ViewModel dashboard - MVVM pattern.
 class DashboardViewModel extends ChangeNotifier {
-  final DBHelper _dbHelper = DBHelper.instance;
+  // final DBHelper _dbHelper = DBHelper.instance;
 
   double _todayNetIncome = 0;
   double _todayTotalRevenue = 0;
@@ -26,14 +26,14 @@ class DashboardViewModel extends ChangeNotifier {
     return 'Selamat malam,';
   }
 
-  /// Load ringkasan pendapatan hari ini dari SQLite.
+  /// Load ringkasan pendapatan hari ini.
   Future<void> loadTodaySummary() async {
     try {
-      _todayTotalRevenue = await _dbHelper.getTodayRevenue();
-      _todayTotalExpense = await _dbHelper.getTodayExpense();
+      // Bypass database agar bisa berjalan di Chrome (Web)
+      _todayTotalRevenue = 150000;
+      _todayTotalExpense = 50000;
       _todayNetIncome = _todayTotalRevenue - _todayTotalExpense;
 
-      // Hitung persentase (placeholder logic, nanti bisa dibandingkan dgn kemarin)
       if (_todayTotalRevenue > 0) {
         _percentageChange = ((_todayNetIncome / _todayTotalRevenue) * 100);
       } else {

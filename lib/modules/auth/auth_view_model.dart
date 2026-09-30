@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:lapakpindah/core/database/db_helper.dart';
+// import 'package:lapakpindah/core/database/db_helper.dart';
 
-/// ViewModel autentikasi — MVVM pattern.
+/// ViewModel autentikasi - MVVM pattern.
 class AuthViewModel extends ChangeNotifier {
-  final DBHelper _dbHelper = DBHelper.instance;
+  // final DBHelper _dbHelper = DBHelper.instance;
 
   bool _isLoading = false;
   bool _isLoggedIn = false;
@@ -33,26 +33,19 @@ class AuthViewModel extends ChangeNotifier {
 
     try {
       // Simulasi delay network-like
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 1000));
 
-      final user = await _dbHelper.validateLogin(identifier, password);
+      // Bypass validasi database agar bisa login sembarang & jalan di Web Chrome
+      _isLoggedIn = true;
+      _userName = "Pengguna Baru";
 
-      if (user != null) {
-        _isLoggedIn = true;
-        _userName = user['name'] as String?;
-
-        if (_rememberDevice) {
-          await _saveSession(identifier);
-        }
-
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      } else {
-        _isLoading = false;
-        notifyListeners();
-        return false;
+      if (_rememberDevice) {
+        await _saveSession(identifier);
       }
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
     } catch (e) {
       _isLoading = false;
       notifyListeners();

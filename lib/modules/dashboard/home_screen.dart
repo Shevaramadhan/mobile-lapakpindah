@@ -7,8 +7,6 @@ import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/core/widgets/action_card_button.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/dashboard/dashboard_view_model.dart';
-import 'package:lapakpindah/models/item.dart'; // TUGAS: Import Item
-import 'package:lapakpindah/routes/app_routes.dart'; // TUGAS: Import AppRoutes
 
 /// Screen beranda/dashboard LapakPindah.
 class HomeScreen extends StatefulWidget {
@@ -313,16 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'Catat Biaya & Nota',
             subtitle: 'Foto dan simpan bukti nota',
             leadingIcon: Icons.receipt_long,
-            onTap: () {
-              // TUGAS: Mengirim data item ke halaman Detail (Langkah 7)
-              const dummyItem = Item(
-                id: '2',
-                title: 'Catat Biaya & Nota',
-                subtitle: 'Foto dan simpan bukti nota',
-                description: 'Catat pengeluaran operasional UMKM keliling Anda di sini.',
-              );
-              Navigator.pushNamed(context, AppRoutes.detail, arguments: dummyItem);
-            },
+            onTap: () => widget.onNavigateToTab?.call(2),
           ),
           const SizedBox(height: AppSpacing.sm),
           ActionCardButton(

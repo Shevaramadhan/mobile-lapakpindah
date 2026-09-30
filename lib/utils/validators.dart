@@ -11,6 +11,20 @@ class Validators {
     return null;
   }
 
+  static String? numericOnly(
+    String? value, {
+    String fieldName = 'Field ini',
+  }) {
+    final requiredError = requiredField(value, fieldName: fieldName);
+    if (requiredError != null) return requiredError;
+
+    final numericRegex = RegExp(r'^[0-9]+$');
+    if (!numericRegex.hasMatch(value!.trim())) {
+      return '$fieldName hanya boleh berisi angka';
+    }
+    return null;
+  }
+
   static String? minLength(
     String? value,
     int min, {
