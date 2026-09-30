@@ -7,13 +7,16 @@ import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/core/widgets/action_card_button.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/dashboard/dashboard_view_model.dart';
+import 'package:lapakpindah/models/item.dart'; // TUGAS: Langkah 7
+import 'package:lapakpindah/routes/app_routes.dart'; // TUGAS: Langkah 7
+import 'package:lapakpindah/widgets/state_views.dart'; // TUGAS: Langkah 5
 
 /// Screen beranda/dashboard LapakPindah.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onNavigateToTab});
 
   /// Callback untuk navigasi ke tab lain dari action buttons.
-  final void Function(int index)? onNavigateToTab;
+  final ValueChanged<int>? onNavigateToTab;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -23,20 +26,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Load data saat screen pertama kali dibuka
+    // Memuat data ringkasan segera setelah screen dimuat
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DashboardViewModel>().loadTodaySummary();
     });
   }
 
-  /// Format angka ke Rupiah: 400000 → "Rp 400.000"
   String _formatCurrency(double amount) {
-    final formatter = NumberFormat.currency(
+    return NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
       decimalDigits: 0,
-    );
-    return formatter.format(amount);
+    ).format(amount);
   }
 
   @override
@@ -44,19 +45,34 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceBackground,
       appBar: _buildAppBar(),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildGreetingHeader(),
-            _buildRevenueSummaryCard(),
-            _buildActionButtons(),
-          ],
-        ),
+      body: Consumer<DashboardViewModel>(
+        builder: (context, vm, child) {
+          // (TUGAS LANGKAH 5) Memilih tampilan: loading / error / success
+          switch (vm.status) {
+            case ViewStatus.loading:
+              return const LoadingView(message: 'Memuat dashboard...');
+            case ViewStatus.error:
+              return ErrorView(
+                message: vm.errorMessage,
+                onRetry: vm.loadTodaySummary,
+              );
+            case ViewStatus.success:
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildGreetingHeader(),
+                    _buildRevenueSummaryCard(vm),
+                    _buildActionButtons(),
+                  ],
+                ),
+              );
+          }
+        },
       ),
     );
   }
@@ -74,35 +90,34 @@ class _HomeScreenState extends State<HomeScreen> {
             color: AppColors.primaryDark,
             size: 19,
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Text('LapakPindah', style: AppTextStyles.titleLarge()),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            'LapakPindah',
+            style: AppTextStyles.titleMedium(color: AppColors.textPrimary),
+          ),
         ],
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.lg),
-          child: Icon(
-            Icons.notifications_outlined,
+        IconButton(
+          onPressed: () {
+            // (TUGAS LANGKAH 5) Untuk ngetes error state saat di-klik tombol bel
+            final vm = context.read<DashboardViewModel>();
+            vm.toggleSimulateError(true); 
+          },
+          icon: const Icon(
+            Icons.notifications_none,
             color: AppColors.textSecondary,
-            size: 21,
           ),
         ),
       ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(
-          height: 1,
-          color: AppColors.inputBorder,
-        ),
-      ),
     );
   }
 
   Widget _buildGreetingHeader() {
-    return Consumer2<DashboardViewModel, AuthViewModel>(
-      builder: (context, dashVM, authVM, _) {
+    return Consumer2<AuthViewModel, DashboardViewModel>(
+      builder: (context, authVM, dashVM, _) {
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -155,142 +170,138 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRevenueSummaryCard() {
-    return Consumer<DashboardViewModel>(
-      builder: (context, vm, _) {
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            border: Border.all(color: AppColors.inputBorder),
-            borderRadius: BorderRadius.circular(AppSpacing.borderRadiusCard),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadowCard,
-                offset: Offset(0, 4),
-                blurRadius: 4,
+  Widget _buildRevenueSummaryCard(DashboardViewModel vm) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        border: Border.all(color: AppColors.inputBorder),
+        borderRadius: BorderRadius.circular(AppSpacing.borderRadiusCard),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadowCard,
+            offset: Offset(0, 4),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Pendapatan Bersih Hari Ini',
+                style: AppTextStyles.labelMedium(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceChip,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Text(
+                  vm.percentageChange >= 0
+                      ? '+${vm.percentageChange.toStringAsFixed(0)}%'
+                      : '${vm.percentageChange.toStringAsFixed(0)}%',
+                  style: AppTextStyles.labelSmall(
+                    color: vm.percentageChange >= 0
+                        ? AppColors.success
+                        : AppColors.error,
+                  ),
+                ),
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+          // Net income
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.sm,
+            ),
+            child: Text(
+              _formatCurrency(vm.todayNetIncome),
+              style: AppTextStyles.heading3(),
+            ),
+          ),
+
+          // Divider
+          Container(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(color: AppColors.inputBorder),
+              ),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
                 children: [
-                  Text(
-                    'Pendapatan Bersih Hari Ini',
-                    style: AppTextStyles.labelMedium(
-                      color: AppColors.textSecondary,
+                  // Total Omzet
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total Omzet',
+                          style: AppTextStyles.bodySmall(),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _formatCurrency(vm.todayTotalRevenue),
+                          style: AppTextStyles.titleSmall(
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  // Vertical divider
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: 2,
+                    width: 1,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceChip,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Text(
-                      vm.percentageChange >= 0
-                          ? '+${vm.percentageChange.toStringAsFixed(0)}%'
-                          : '${vm.percentageChange.toStringAsFixed(0)}%',
-                      style: AppTextStyles.labelSmall(
-                        color: vm.percentageChange >= 0
-                            ? AppColors.success
-                            : AppColors.error,
+                    color: AppColors.inputBorder,
+                  ),
+                  // Pengeluaran
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: AppSpacing.sm,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pengeluaran',
+                            style: AppTextStyles.bodySmall(),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatCurrency(vm.todayTotalExpense),
+                            style: AppTextStyles.titleSmall(
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
-
-              // Net income
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.sm,
-                ),
-                child: Text(
-                  _formatCurrency(vm.todayNetIncome),
-                  style: AppTextStyles.heading3(),
-                ),
-              ),
-
-              // Divider
-              Container(
-                padding: const EdgeInsets.only(top: AppSpacing.sm),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: AppColors.inputBorder),
-                  ),
-                ),
-                child: IntrinsicHeight(
-                  child: Row(
-                    children: [
-                      // Total Omzet
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total Omzet',
-                              style: AppTextStyles.bodySmall(),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _formatCurrency(vm.todayTotalRevenue),
-                              style: AppTextStyles.titleSmall(
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Vertical divider
-                      Container(
-                        width: 1,
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                        ),
-                        color: AppColors.inputBorder,
-                      ),
-                      // Pengeluaran
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            left: AppSpacing.sm,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Pengeluaran',
-                                style: AppTextStyles.bodySmall(),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _formatCurrency(vm.todayTotalExpense),
-                                style: AppTextStyles.titleSmall(
-                                  color: AppColors.error,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -311,7 +322,16 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'Catat Biaya & Nota',
             subtitle: 'Foto dan simpan bukti nota',
             leadingIcon: Icons.receipt_long,
-            onTap: () => widget.onNavigateToTab?.call(2),
+            onTap: () {
+              // (TUGAS LANGKAH 7) Mengirim data item ke halaman Detail
+              const dummyItem = Item(
+                id: '2',
+                title: 'Catat Biaya & Nota',
+                subtitle: 'Foto dan simpan bukti nota',
+                description: 'Catat pengeluaran operasional UMKM keliling Anda di sini.',
+              );
+              Navigator.pushNamed(context, AppRoutes.detail, arguments: dummyItem);
+            },
           ),
           const SizedBox(height: AppSpacing.sm),
           ActionCardButton(
