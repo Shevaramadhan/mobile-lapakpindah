@@ -4,7 +4,7 @@ import 'package:lapakpindah/core/theme/app_theme.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/auth/login_screen.dart';
 import 'package:lapakpindah/modules/dashboard/dashboard_view_model.dart';
-import 'package:lapakpindah/routes/app_routes.dart'; // TUGAS: Import AppRoutes
+import 'package:lapakpindah/modules/dashboard/main_navigation_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,9 +26,6 @@ class LapakPindahApp extends StatelessWidget {
         title: 'LapakPindah',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        // TUGAS: Mendaftarkan konfigurasi named routes dari AppRoutes
-        onGenerateRoute: AppRoutes.onGenerateRoute,
-        onUnknownRoute: AppRoutes.onUnknownRoute,
         home: const _AuthGate(),
       ),
     );
@@ -59,8 +56,9 @@ class _AuthGateState extends State<_AuthGate> {
     if (!mounted) return;
 
     if (hasSession) {
-      // TUGAS: Menggunakan named routes untuk navigasi
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+      );
     } else {
       setState(() => _isChecking = false);
     }

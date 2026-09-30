@@ -7,8 +7,7 @@ import 'package:lapakpindah/core/widgets/custom_button.dart';
 import 'package:lapakpindah/core/widgets/custom_text_field.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/auth/register_placeholder_screen.dart';
-import 'package:lapakpindah/utils/validators.dart'; // TUGAS: Import validators
-import 'package:lapakpindah/routes/app_routes.dart'; // TUGAS: Import AppRoutes
+import 'package:lapakpindah/modules/dashboard/main_navigation_screen.dart';
 
 /// Screen login LapakPindah.
 class LoginScreen extends StatefulWidget {
@@ -43,8 +42,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      // TUGAS: Menggunakan named routes
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const MainNavigationScreen(),
+        ),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -141,8 +143,12 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _identifierController,
               prefixIcon: Icons.phone_outlined,
               keyboardType: TextInputType.emailAddress,
-              // TUGAS: Memakai fungsi dari validators.dart
-              validator: (value) => Validators.minLength(value, 3, fieldName: 'Nomor WA / Email'),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Masukkan nomor WA atau email';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -172,8 +178,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              // TUGAS: Memakai fungsi password dari validators.dart
-              validator: Validators.password,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Masukkan kata sandi atau PIN';
+                }
+                if (value.trim().length < 6) {
+                  return 'Minimal 6 karakter';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: AppSpacing.md),
 
