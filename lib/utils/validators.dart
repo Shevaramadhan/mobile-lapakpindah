@@ -1,7 +1,10 @@
 class Validators {
   Validators._();
 
-  static String? requiredField(String? value, {String fieldName = 'Field ini'}) {
+  static String? requiredField(
+    String? value, {
+    String fieldName = 'Field ini',
+  }) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName wajib diisi';
     }
