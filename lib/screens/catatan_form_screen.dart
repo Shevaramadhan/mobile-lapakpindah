@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../utils/validators.dart'; // Sesuaikan path ini dengan lokasi validators.dart kamu
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_spacing.dart';
+import '../utils/validators.dart'; // Sesuaikan path ini dengan lokasi validators.dart kamu
 
 class CatatanFormScreen extends StatefulWidget {
   const CatatanFormScreen({super.key});

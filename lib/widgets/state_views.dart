@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 
+/// Status tampilan layar yang memuat data (M4: State-Driven UI).
+/// Dipakai bersama oleh semua layar/ViewModel:
+/// - loading : data sedang diambil  → tampilkan [LoadingView]
+/// - success : data berhasil diambil → tampilkan isi layar
+/// - error   : data gagal diambil    → tampilkan [ErrorView]
+enum ViewStatus { loading, success, error }
+
 /// Tampilan saat data sedang dimuat.
 class LoadingView extends StatelessWidget {
   final String message;

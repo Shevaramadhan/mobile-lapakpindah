@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:lapakpindah/core/theme/app_theme.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/dashboard/dashboard_view_model.dart';
-import 'package:lapakpindah/routes/app_routes.dart'; // Sesuaikan path ini dengan lokasi file app_routes.dart kamu
+import 'package:lapakpindah/routes/app_routes.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,9 +25,9 @@ class LapakPindahApp extends StatelessWidget {
         title: 'LapakPindah',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        // Properti 'home' DIHAPUS. Diganti dengan initialRoute
+        // M4: Named routes. Jika memakai initialRoute, properti `home` tidak dipakai.
         initialRoute: AppRoutes.login,
-        onGenerateRoute: AppRoutes.onGenerateRoute,
+        routes: AppRoutes.routes,
         onUnknownRoute: AppRoutes.onUnknownRoute,
       ),
     );

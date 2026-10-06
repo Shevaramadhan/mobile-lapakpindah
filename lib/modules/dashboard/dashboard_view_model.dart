@@ -1,54 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:lapakpindah/core/database/db_helper.dart';
+import 'package:lapakpindah/data/dashboard_repository.dart';
+import 'package:lapakpindah/models/dashboard_summary.dart';
+import 'package:lapakpindah/widgets/state_views.dart';
 
-/// ViewModel dashboard — MVVM pattern.
+/// ViewModel dashboard / Beranda (M3: MVVM).
+///
+/// View (HomeScreen) → ViewModel (kelas ini) → Model/Data (DashboardRepository).
+/// ViewModel menyimpan state tampilan dan memberi tahu View lewat
+/// `notifyListeners()` setiap kali state berubah.
 class DashboardViewModel extends ChangeNotifier {
-  final DBHelper _dbHelper = DBHelper.instance;
+  // ── Sumber data ──
+  final _repository = DashboardRepository();
 
-  double _todayNetIncome = 0;
-  double _todayTotalRevenue = 0;
-  double _todayTotalExpense = 0;
-  double _percentageChange = 0;
-  String? _currentLocation;
+  // ── State ──
+  ViewStatus _status = ViewStatus.loading;
+  String _errorMessage = '';
+  DashboardSummary _summary = DashboardSummary.closed;
 
-  double get todayNetIncome => _todayNetIncome;
-  double get todayTotalRevenue => _todayTotalRevenue;
-  double get todayTotalExpense => _todayTotalExpense;
-  double get percentageChange => _percentageChange;
-  String? get currentLocation => _currentLocation;
+  // ── Getter untuk UI (UI hanya membaca, tidak mengubah langsung) ──
+  ViewStatus get status => _status;
+  String get errorMessage => _errorMessage;
+  DashboardSummary get summary => _summary;
 
-  /// Greeting berdasarkan jam saat ini.
-  String getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) return 'Selamat pagi,';
-    if (hour < 15) return 'Selamat siang,';
-    if (hour < 18) return 'Selamat sore,';
-    return 'Selamat malam,';
-  }
+  // ── Memuat data dashboard ──
 
-  /// Load ringkasan pendapatan hari ini dari SQLite.
-  Future<void> loadTodaySummary() async {
-    try {
-      _todayTotalRevenue = await _dbHelper.getTodayRevenue();
-      _todayTotalExpense = await _dbHelper.getTodayExpense();
-      _todayNetIncome = _todayTotalRevenue - _todayTotalExpense;
-
-      // Hitung persentase (placeholder logic, nanti bisa dibandingkan dgn kemarin)
-      if (_todayTotalRevenue > 0) {
-        _percentageChange = ((_todayNetIncome / _todayTotalRevenue) * 100);
-      } else {
-        _percentageChange = 0;
-      }
-
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading dashboard summary: $e');
-    }
-  }
-
-  /// Set lokasi aktif.
-  void setCurrentLocation(String location) {
-    _currentLocation = location;
+  /// Memuat ringkasan dashboard. [simulateError] untuk menguji error state.
+  Future<void> loadDashboard({bool simulateError = false}) async {
+    // 1. Masuk loading state
+    _status = ViewStatus.loading;
     notifyListeners();
+
+    try {
+      // 2. Ambil ringkasan dari repository
+      _summary = await _repository.fetchSummary(simulateError: simulateError);
+      _status = ViewStatus.success;
+    } catch (e) {
+      // 3. Gagal: simpan pesan error untuk ditampilkan ErrorView
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      _status = ViewStatus.error;
+    }
+    notifyListeners();
+  }
+
+  // ── Tutup lapak ──
+
+  /// Menutup sesi aktif lalu memuat ulang dashboard
+  /// (tampilan berubah menjadi "Lapak sedang tutup").
+  Future<void> closeSession() async {
+    await _repository.closeActiveSession();
+    await loadDashboard();
   }
 }

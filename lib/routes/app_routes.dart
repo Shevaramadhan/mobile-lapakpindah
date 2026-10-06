@@ -1,53 +1,36 @@
 import 'package:flutter/material.dart';
-import '../modules/dashboard/home_screen.dart'; 
 import '../modules/auth/login_screen.dart';
-import '../screens/not_found_screen.dart'; // Sesuaikan path jika diletakkan di /screens atau /core/widgets
-import '../models/lapak.dart';
 import '../modules/dashboard/detail_screen.dart';
-import '../modules/dashboard/catatan_form_screen.dart';
+import '../modules/dashboard/main_navigation_screen.dart';
+import '../screens/catatan_form_screen.dart';
+import '../screens/not_found_screen.dart';
 
+/// Satu tempat untuk seluruh route aplikasi (M4: Named Routes).
+///
+/// Dipakai di MaterialApp:
+///   initialRoute: AppRoutes.login,
+///   routes: AppRoutes.routes,
+///   onUnknownRoute: AppRoutes.onUnknownRoute,
 class AppRoutes {
   AppRoutes._();
 
-  // Nama route disimpan sebagai konstanta
+  // ── 1. Nama route disimpan sebagai konstanta (hindari salah ketik) ──
   static const String login = '/login';
   static const String home = '/home';
   static const String detail = '/detail';
   static const String catatanForm = '/catatan-form';
 
-  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
-    switch (settings.name) {
-      case login:
-        return MaterialPageRoute<void>(
-          builder: (_) => const LoginScreen(),
-          settings: settings,
-        );
-      case home:
-        return MaterialPageRoute<void>(
-          builder: (_) => const HomeScreen(),
-          settings: settings,
-        );
-        case detail:
-        final args = settings.arguments; // Tangkap data yang dikirim
-        if (args is Lapak) {
-          return MaterialPageRoute<void>(
-            builder: (_) => DetailScreen(item: args),
-            settings: settings,
-          );
-        }
-        return null;
+  // ── 2. Daftar route: nama → layar ──
+  // Data yang dikirim lewat `arguments` dibaca di layar tujuan
+  // dengan ModalRoute.of(context)?.settings.arguments.
+  static final Map<String, WidgetBuilder> routes = {
+    login: (context) => const LoginScreen(),
+    home: (context) => const MainNavigationScreen(), // Beranda + 5 tab
+    detail: (context) => const DetailScreen(), // arguments: Lapak
+    catatanForm: (context) => const CatatanFormScreen(), // mengembalikan String
+  };
 
-        case catatanForm:
-        // Gunakan <String> karena layar ini akan mengembalikan data bertipe teks (String)
-        return MaterialPageRoute<String>(
-          builder: (_) => const CatatanFormScreen(),
-          settings: settings,
-        );
-      default:
-        return null; // Route tidak terdaftar -> akan diteruskan ke onUnknownRoute
-    }
-  }
-
+  // ── 3. Halaman cadangan jika nama route tidak terdaftar ──
   static Route<dynamic> onUnknownRoute(RouteSettings settings) {
     return MaterialPageRoute<void>(
       builder: (_) => NotFoundScreen(routeName: settings.name),

@@ -2,6 +2,11 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 
 /// Singleton helper SQLite database LapakPindah.
+///
+/// CATATAN: SEMENTARA TIDAK DIPAKAI. Aplikasi masih memakai repository
+/// dummy di folder `lib/data/`. Skema di bawah masih mengikuti PRD v1
+/// (kasir/stok) dan harus ditulis ulang ke PRD v2 sebelum dipakai,
+/// termasuk mengaktifkan `PRAGMA foreign_keys = ON` di `onConfigure`.
 class DBHelper {
   DBHelper._();
   static final DBHelper instance = DBHelper._();

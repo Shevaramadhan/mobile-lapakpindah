@@ -1,92 +1,106 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:lapakpindah/core/database/db_helper.dart';
+import 'package:lapakpindah/data/auth_repository.dart';
+import 'package:lapakpindah/models/app_user.dart';
 
-/// ViewModel autentikasi — MVVM pattern.
+/// ViewModel autentikasi (M3: MVVM).
+///
+/// View (LoginScreen) → ViewModel (kelas ini) → Model/Data (AuthRepository).
+/// Tugasnya: menyimpan state login untuk UI, memanggil repository,
+/// dan mengingat akun di perangkat (shared_preferences).
 class AuthViewModel extends ChangeNotifier {
-  final DBHelper _dbHelper = DBHelper.instance;
+  // ── Sumber data ──
+  final _repository = AuthRepository();
 
+  // ── State ──
   bool _isLoading = false;
-  bool _isLoggedIn = false;
-  String? _userName;
+  AppUser? _user;
+  String? _errorMessage;
   bool _rememberDevice = true;
 
+  // ── Getter untuk UI (UI hanya membaca, tidak mengubah langsung) ──
   bool get isLoading => _isLoading;
-  bool get isLoggedIn => _isLoggedIn;
-  String? get userName => _userName;
+  bool get isLoggedIn => _user != null;
+  AppUser? get user => _user;
+  String? get userName => _user?.displayName;
+  String? get errorMessage => _errorMessage;
   bool get rememberDevice => _rememberDevice;
 
-  static const String _keyIsLoggedIn = 'is_logged_in';
-  static const String _keyUserName = 'user_name';
-  static const String _keyIdentifier = 'identifier';
+  // ── Key penyimpanan di perangkat ──
+  static const String _keyIdentifier = 'logged_in_identifier';
 
-  /// Toggle checkbox "Ingat perangkat ini".
+  /// Toggle checkbox "Ingat akun ini di perangkat ini".
   void toggleRememberDevice(bool value) {
     _rememberDevice = value;
     notifyListeners();
   }
 
-  /// Login dengan identifier (WA/email) dan password.
-  Future<bool> login(String identifier, String password) async {
+  // ── Login ──
+
+  /// Login dengan nomor WhatsApp / email dan PIN.
+  /// Mengembalikan true jika berhasil. Jika gagal, pesan ada di [errorMessage].
+  Future<bool> login(String identifier, String pin) async {
+    // 1. Masuk loading state & hapus error lama
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      // Simulasi delay network-like
-      await Future.delayed(const Duration(milliseconds: 500));
+      // 2. Cek ke repository (melempar AuthException jika salah)
+      _user = await _repository.login(identifier: identifier, pin: pin);
 
-      final user = await _dbHelper.validateLogin(identifier, password);
-
-      if (user != null) {
-        _isLoggedIn = true;
-        _userName = user['name'] as String?;
-
-        if (_rememberDevice) {
-          await _saveSession(identifier);
-        }
-
-        _isLoading = false;
-        notifyListeners();
-        return true;
+      // 3. Dicentang → ingat akun; tidak dicentang → hapus akun yang dulu diingat
+      if (_rememberDevice) {
+        await _saveSession(identifier);
       } else {
-        _isLoading = false;
-        notifyListeners();
-        return false;
+        await _clearSession();
       }
-    } catch (e) {
+      return true;
+    } on AuthException catch (e) {
+      // Error yang dikenali (nomor/email atau PIN salah)
+      _errorMessage = e.message;
+      return false;
+    } catch (_) {
+      // Error lain yang tidak terduga
+      _errorMessage = 'Terjadi kesalahan. Coba lagi nanti.';
+      return false;
+    } finally {
+      // 4. Selalu keluar dari loading state, berhasil maupun gagal
       _isLoading = false;
       notifyListeners();
-      return false;
     }
   }
 
-  /// Logout dan hapus session.
+  // ── Logout ──
+
+  /// Logout dan hapus akun yang diingat.
   Future<void> logout() async {
-    _isLoggedIn = false;
-    _userName = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    _user = null;
+    await _clearSession();
     notifyListeners();
   }
 
-  /// Cek apakah ada session tersimpan.
+  // ── Akun yang diingat ──
+
+  /// Dipanggil saat aplikasi dibuka. Jika ada akun yang diingat,
+  /// pengguna dianggap sudah login. Mengembalikan true jika berhasil.
   Future<bool> checkSavedSession() async {
     final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool(_keyIsLoggedIn) ?? false;
+    final identifier = prefs.getString(_keyIdentifier);
+    if (identifier == null) return false;
 
-    if (isLoggedIn) {
-      _isLoggedIn = true;
-      _userName = prefs.getString(_keyUserName);
-      notifyListeners();
-      return true;
-    }
-    return false;
+    _user = await _repository.findByIdentifier(identifier);
+    notifyListeners();
+    return _user != null;
   }
 
   Future<void> _saveSession(String identifier) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyIsLoggedIn, true);
-    await prefs.setString(_keyUserName, _userName ?? '');
     await prefs.setString(_keyIdentifier, identifier);
+  }
+
+  Future<void> _clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyIdentifier);
   }
 }

@@ -19,6 +19,31 @@ class Validators {
     return null;
   }
 
+  /// Nomor WhatsApp ATAU email (dipakai di Login).
+  /// - Ada "@"  → dicek sebagai email.
+  /// - Tanpa "@" → dicek sebagai nomor: 10–14 digit, boleh diawali "+",
+  ///   spasi dan strip diabaikan (contoh "0812-3456-7890").
+  static String? phoneOrEmail(String? value) {
+    final requiredError = requiredField(value, fieldName: 'Nomor WA atau email');
+    if (requiredError != null) return requiredError;
+
+    final input = value!.trim();
+    if (input.contains('@')) return email(input);
+
+    final digits = input.replaceAll(RegExp(r'[\s\-]'), '');
+    if (!RegExp(r'^\+?\d{10,14}$').hasMatch(digits)) {
+      return 'Nomor WA tidak valid (10–14 digit)';
+    }
+    return null;
+  }
+
+  /// PIN wajib tepat 6 digit angka.
+  static String? pin(String? value) {
+    if (value == null || value.isEmpty) return 'PIN wajib diisi';
+    if (!RegExp(r'^\d{6}$').hasMatch(value)) return 'PIN harus 6 digit angka';
+    return null;
+  }
+
   static String? password(String? value) {
     if (value == null || value.isEmpty) return 'Password wajib diisi';
     if (value.length < 8) return 'Password minimal 8 karakter';

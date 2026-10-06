@@ -1,27 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/core/theme/app_text_styles.dart';
-import 'package:lapakpindah/core/widgets/action_card_button.dart';
+import 'package:lapakpindah/models/dashboard_summary.dart';
 import 'package:lapakpindah/modules/auth/auth_view_model.dart';
 import 'package:lapakpindah/modules/dashboard/dashboard_view_model.dart';
-
-import '../../routes/app_routes.dart'; // Buka komentar/tambahkan baris ini
-
-import 'package:lapakpindah/models/lapak.dart';
-import 'package:lapakpindah/data/lapak_repository.dart';
+import 'package:lapakpindah/modules/dashboard/widgets/session_map.dart';
+import 'package:lapakpindah/routes/app_routes.dart';
 import 'package:lapakpindah/widgets/state_views.dart';
 
-// (1) Status tampilan layar
-enum ViewStatus { loading, success, error }
+// ── Helper format ──
 
-/// Screen beranda/dashboard LapakPindah.
+/// 400000 → "Rp 400.000"
+String _formatRupiah(double amount) => NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(amount);
+
+/// DateTime → "06.10"
+String _formatTime(DateTime? time) =>
+    time == null ? '-' : DateFormat('HH.mm').format(time);
+
+/// Screen Beranda (dashboard) LapakPindah.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onNavigateToTab});
 
-  /// Callback untuk navigasi ke tab lain dari action buttons.
+  /// Callback pindah tab di bottom navigation (dipakai kartu modul).
+  /// Index: 1 Lokasi, 2 Biaya, 3 Penjualan, 4 Evaluasi.
   final void Function(int index)? onNavigateToTab;
 
   @override
@@ -29,58 +37,86 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // (2) Variabel State untuk Langkah 5
-  final _repository = LapakRepository();
-  ViewStatus _status = ViewStatus.loading;
-  List<Lapak> _items = [];
-  String _errorMessage = '';
-  bool _simulateError = false; // Untuk menguji ErrorView
+  /// true = data dashboard sengaja dibuat gagal (untuk menguji ErrorView).
+  bool _simulateError = false;
 
   @override
   void initState() {
     super.initState();
-    // Load data summary dashboard asli
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardViewModel>().loadTodaySummary();
-    });
-    
-    // (3) Ambil data dummy lokasi saat layar pertama dibuka
-    _loadItems();
+    // Muat data setelah frame pertama agar aman memakai context.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDashboard());
   }
 
-  // (4) Mengambil data + menangani error dengan try-catch
-  Future<void> _loadItems() async {
-    if (_status != ViewStatus.loading) {
-      setState(() => _status = ViewStatus.loading);
-    }
+  Future<void> _loadDashboard() {
+    return context
+        .read<DashboardViewModel>()
+        .loadDashboard(simulateError: _simulateError);
+  }
 
-    try {
-      final items = await _repository.fetchItems(simulateError: _simulateError);
-      
-      // Pemeriksaan mounted sebelum setState
-      if (!mounted) return;
-
-      setState(() {
-        _items = items;
-        _status = ViewStatus.success;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
-        _status = ViewStatus.error;
-      });
+  // ── Aksi: menu profil ──
+  void _onProfileMenuSelected(String value) {
+    if (value == 'error') {
+      setState(() => _simulateError = !_simulateError);
+      _loadDashboard();
+    } else if (value == 'logout') {
+      _logout();
     }
   }
 
-  /// Format angka ke Rupiah: 400000 → "Rp 400.000"
-  String _formatCurrency(double amount) {
-    final formatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
+  // ── Aksi: keluar akun ──
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Keluar'),
+        content: const Text('Yakin ingin keluar dari akun ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
     );
-    return formatter.format(amount);
+    if (confirmed != true || !mounted) return;
+
+    await context.read<AuthViewModel>().logout();
+    if (!mounted) return;
+
+    // Kembali ke Login dan hapus semua layar sebelumnya dari stack
+    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+  }
+
+  // ── Aksi: tutup lapak ──
+  Future<void> _closeSession(String locationName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Tutup lapak?'),
+        content: Text('Sesi jualan di $locationName akan diakhiri.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Tutup lapak'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    await context.read<DashboardViewModel>().closeSession();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Lapak ditutup. Sesi jualan selesai.')),
+    );
   }
 
   @override
@@ -88,367 +124,535 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.surfaceBackground,
       appBar: _buildAppBar(),
-      // (5) Isi layar diganti menjadi pemanggilan _buildContent
-      body: _buildContent(), 
-    );
-  }
-
-  // (6) Memilih tampilan: loading / error / success
-  Widget _buildContent() {
-    return switch (_status) {
-      ViewStatus.loading => const LoadingView(message: 'Memuat data lapak...'),
-      ViewStatus.error => ErrorView(message: _errorMessage, onRetry: _loadItems),
-      ViewStatus.success => _buildDashboardWithList(),
-    };
-  }
-
-  // Menggabungkan dashboard asli dengan list lokasi lapak
-  Widget _buildDashboardWithList() {
-    return ListView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+      body: Consumer<DashboardViewModel>(
+        builder: (context, vm, _) {
+          // Pilih tampilan sesuai status: loading / error / success
+          return switch (vm.status) {
+            ViewStatus.loading =>
+              const LoadingView(message: 'Memuat beranda...'),
+            ViewStatus.error =>
+              ErrorView(message: vm.errorMessage, onRetry: _loadDashboard),
+            ViewStatus.success => _buildContent(vm.summary),
+          };
+        },
       ),
-      children: [
-        _buildGreetingHeader(),
-        const SizedBox(height: AppSpacing.md),
-        _buildRevenueSummaryCard(),
-        const SizedBox(height: AppSpacing.md),
-        _buildActionButtons(),
-        const SizedBox(height: AppSpacing.lg),
-        
-        // Judul untuk Daftar Lokasi
-        Text('Daftar Lokasi Jualan', style: AppTextStyles.heading2()),
-        const SizedBox(height: AppSpacing.sm),
-        
-        // Menampilkan daftar data dummy
-        _buildList(),
-      ],
     );
   }
 
-  Widget _buildList() {
-    if (_items.isEmpty) {
-      return const EmptyView(message: 'Belum ada data lokasi lapak.');
-    }
-    
-    return ListView.builder(
-      shrinkWrap: true, // Wajib agar tidak error di dalam ListView utama
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _items.length,
-      itemBuilder: (context, index) {
-        final item = _items[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-          color: AppColors.surfaceCard,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(color: AppColors.inputBorder),
-            borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-          ),
-          child: ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.storefront, color: AppColors.primaryDark),
-            ),
-            title: Text(item.title, style: AppTextStyles.titleSmall()),
-            subtitle: Text(item.subtitle, style: AppTextStyles.bodySmall()),
-            trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.detail,
-                arguments: item,
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
+  // ── AppBar: logo + nama aplikasi + tombol profil ──
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: AppColors.surfaceCard,
-      elevation: 0,
-      scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
+      titleSpacing: AppSpacing.lg,
       title: Row(
         children: [
-          const Icon(
-            Icons.storefront,
-            color: AppColors.primaryDark,
-            size: 19,
-          ),
+          const Icon(Icons.storefront, color: AppColors.primaryDark, size: 22),
           const SizedBox(width: AppSpacing.sm),
           Text('LapakPindah', style: AppTextStyles.titleLarge()),
         ],
       ),
       actions: [
-        // Menu untuk simulasi error (memenuhi syarat Langkah 5)
         PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-          onSelected: (value) {
-            if (value == 'error') {
-              setState(() => _simulateError = !_simulateError);
-              _loadItems();
-            }
-          },
+          tooltip: 'Profil',
+          onSelected: _onProfileMenuSelected,
           itemBuilder: (context) => [
             CheckedPopupMenuItem(
               value: 'error',
               checked: _simulateError,
-              child: const Text('Simulasikan Error'),
+              child: const Text('Simulasikan error'),
             ),
+            const PopupMenuItem(value: 'logout', child: Text('Keluar')),
           ],
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.lg),
-          child: const Icon(
-            Icons.notifications_outlined,
-            color: AppColors.textSecondary,
-            size: 21,
+          // Avatar bulat bergaris seperti desain
+          child: Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.lg),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceChip,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.inputBorder),
+              ),
+              child: const Icon(
+                Icons.person_outline,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
         ),
       ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(
-          height: 1,
-          color: AppColors.inputBorder,
-        ),
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(1),
+        child: Divider(height: 1, thickness: 1, color: AppColors.inputBorder),
       ),
     );
   }
 
-  Widget _buildGreetingHeader() {
-    return Consumer2<DashboardViewModel, AuthViewModel>(
-      builder: (context, dashVM, authVM, _) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    dashVM.getGreeting(),
-                    style: AppTextStyles.bodySmall(),
-                  ),
-                  Text(
-                    authVM.userName ?? 'Pengguna',
-                    style: AppTextStyles.heading2(),
-                  ),
-                ],
-              ),
-              // Location chip
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
+  // ── Isi beranda (status success) ──
+  Widget _buildContent(DashboardSummary summary) {
+    final userName = context.watch<AuthViewModel>().userName ?? 'Pengguna';
+
+    return RefreshIndicator(
+      // Tarik ke bawah untuk memuat ulang
+      onRefresh: _loadDashboard,
+      child: ListView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        children: [
+          _GreetingHeader(userName: userName, summary: summary),
+          const SizedBox(height: AppSpacing.md),
+          summary.isSessionActive
+              ? _ActiveSessionCard(
+                  summary: summary,
+                  onClose: () => _closeSession(summary.locationName ?? 'lokasi ini'),
+                )
+              : _ClosedSessionCard(
+                  onOpen: () => widget.onNavigateToTab?.call(1),
                 ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceChip,
-                  border: Border.all(color: AppColors.inputBorder),
-                  borderRadius: BorderRadius.circular(
-                    AppSpacing.borderRadius,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.location_on,
-                      color: AppColors.success,
-                      size: 14,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      dashVM.currentLocation ?? 'Belum set lokasi',
-                      style: AppTextStyles.labelMedium(),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+          // Estimasi bersih hanya relevan saat ada sesi aktif
+          if (summary.isSessionActive) ...[
+            const SizedBox(height: AppSpacing.md),
+            _NetEstimateCard(summary: summary),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          _ModuleGrid(onNavigateToTab: widget.onNavigateToTab),
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildRevenueSummaryCard() {
-    return Consumer<DashboardViewModel>(
-      builder: (context, vm, _) {
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            border: Border.all(color: AppColors.inputBorder),
-            borderRadius: BorderRadius.circular(AppSpacing.borderRadiusCard),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadowCard,
-                offset: Offset(0, 4),
-                blurRadius: 4,
+// ════════════════════════════════════════════════════════════════════
+// Widget bagian-bagian Beranda
+// ════════════════════════════════════════════════════════════════════
+
+/// Sapaan + status lapak (buka/tutup) + chip sesi.
+class _GreetingHeader extends StatelessWidget {
+  const _GreetingHeader({required this.userName, required this.summary});
+
+  final String userName;
+  final DashboardSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = summary.isSessionActive;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Teks sapaan & judul
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Halo, $userName', style: AppTextStyles.bodySmall()),
+              const SizedBox(height: 2),
+              Text(
+                isActive ? 'Lapak sedang buka' : 'Lapak sedang tutup',
+                style: AppTextStyles.heading2(),
               ),
             ],
           ),
-          child: Column(
+        ),
+        // Chip status sesi (titik hijau = aktif, abu = tidak ada sesi)
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceChip,
+            border: Border.all(color: AppColors.inputBorder),
+            borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
+          ),
+          child: Row(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Pendapatan Bersih Hari Ini',
-                    style: AppTextStyles.labelMedium(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceChip,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+              Icon(
+                Icons.circle,
+                size: 8,
+                color: isActive ? AppColors.success : AppColors.textSecondary,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                isActive ? 'Sesi aktif' : 'Tidak ada sesi',
+                style: AppTextStyles.labelMedium(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Kartu dasar Beranda (M3: Card + ShapeBorder + elevation).
+/// Latar putih, garis tepi, sudut membulat, bayangan tipis.
+class _DashboardCard extends StatelessWidget {
+  const _DashboardCard({required this.child, this.padding = EdgeInsets.zero});
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 1, // bayangan tipis (hierarki visual)
+      color: AppColors.surfaceCard,
+      surfaceTintColor: Colors.transparent, // jaga warna tetap putih di Material 3
+      clipBehavior: Clip.antiAlias, // agar peta ikut terpotong di sudut kartu
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: AppColors.inputBorder),
+        borderRadius: BorderRadius.circular(AppSpacing.borderRadiusCard),
+      ),
+      child: Padding(padding: padding, child: child),
+    );
+  }
+}
+
+/// Kartu sesi aktif: peta + nama lokasi + jam + tombol Tutup lapak.
+class _ActiveSessionCard extends StatelessWidget {
+  const _ActiveSessionCard({required this.summary, required this.onClose});
+
+  final DashboardSummary summary;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DashboardCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Peta lokasi (atau pengganti jika koordinat belum ada) ──
+          SizedBox(
+            height: 240,
+            child: summary.hasCoordinate
+                ? SessionMap(
+                    latitude: summary.latitude!,
+                    longitude: summary.longitude!,
+                  )
+                : Container(
+                    color: AppColors.surfaceChip,
+                    alignment: Alignment.center,
                     child: Text(
-                      vm.percentageChange >= 0
-                          ? '+${vm.percentageChange.toStringAsFixed(0)}%'
-                          : '${vm.percentageChange.toStringAsFixed(0)}%',
-                      style: AppTextStyles.labelSmall(
-                        color: vm.percentageChange >= 0
-                            ? AppColors.success
-                            : AppColors.error,
-                      ),
+                      'Koordinat lokasi belum ditandai',
+                      style: AppTextStyles.bodySmall(),
                     ),
                   ),
-                ],
-              ),
+          ),
+          const Divider(height: 1, color: AppColors.inputBorder),
 
-              // Net income
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.sm,
-                ),
-                child: Text(
-                  _formatCurrency(vm.todayNetIncome),
-                  style: AppTextStyles.heading3(),
-                ),
-              ),
-
-              // Divider
-              Container(
-                padding: const EdgeInsets.only(top: AppSpacing.sm),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: AppColors.inputBorder),
-                  ),
-                ),
-                child: IntrinsicHeight(
-                  child: Row(
+          // ── Nama lokasi, jam, tombol tutup ──
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Total Omzet
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total Omzet',
-                              style: AppTextStyles.bodySmall(),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _formatCurrency(vm.todayTotalRevenue),
-                              style: AppTextStyles.titleSmall(
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        summary.locationName ?? '-',
+                        style: AppTextStyles.titleLarge(),
                       ),
-                      // Vertical divider
-                      Container(
-                        width: 1,
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                        ),
-                        color: AppColors.inputBorder,
-                      ),
-                      // Pengeluaran
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            left: AppSpacing.sm,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Pengeluaran',
-                                style: AppTextStyles.bodySmall(),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _formatCurrency(vm.todayTotalExpense),
-                                style: AppTextStyles.titleSmall(
-                                  color: AppColors.error,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Buka ${_formatTime(summary.openTime)} · '
+                        'rencana tutup ${_formatTime(summary.plannedCloseTime)}',
+                        style: AppTextStyles.bodySmall(),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: AppSpacing.sm),
+                OutlinedButton(
+                  onPressed: onClose,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                    side: const BorderSide(color: AppColors.primary),
+                    minimumSize: const Size(48, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.borderRadius),
+                    ),
+                  ),
+                  child: Text(
+                    'Tutup lapak',
+                    style: AppTextStyles.labelMedium(color: AppColors.primaryDark),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kartu saat tidak ada sesi aktif: ajakan membuka lapak.
+class _ClosedSessionCard extends StatelessWidget {
+  const _ClosedSessionCard({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DashboardCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        children: [
+          const Icon(Icons.storefront_outlined, size: 48, color: AppColors.inputIcon),
+          const SizedBox(height: AppSpacing.sm),
+          Text('Belum ada sesi jualan', style: AppTextStyles.titleSmall()),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Buka lapak di sebuah lokasi untuk mulai mencatat penjualan dan biaya.',
+            style: AppTextStyles.bodySmall(),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          FilledButton.icon(
+            onPressed: onOpen,
+            icon: const Icon(Icons.store),
+            label: const Text('Buka lapak'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              minimumSize: const Size(48, 48),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kartu estimasi bersih: badge balik modal + nominal + penjualan/pengeluaran.
+class _NetEstimateCard extends StatelessWidget {
+  const _NetEstimateCard({required this.summary});
+
+  final DashboardSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final isBreakEven = summary.isBreakEven;
+
+    return _DashboardCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Judul + badge balik modal (FR-14) ──
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Estimasi Bersih Hari Ini',
+                  style: AppTextStyles.bodyMedium(),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: (isBreakEven ? AppColors.success : AppColors.error)
+                      .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
+                ),
+                child: Text(
+                  isBreakEven ? 'Sudah balik modal' : 'Belum balik modal',
+                  style: AppTextStyles.labelSmall(
+                    color: isBreakEven ? AppColors.success : AppColors.error,
+                  ),
+                ),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
+          const SizedBox(height: AppSpacing.sm),
 
-  Widget _buildActionButtons() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Column(
-        children: [
-          ActionCardButton(
-            title: 'Kasir POS',
-            subtitle: 'Buka dan mulai transaksi',
-            leadingIcon: Icons.point_of_sale,
-            isPrimary: true,
-            onTap: () => widget.onNavigateToTab?.call(1),
-          ),
+          // ── Nominal estimasi bersih ──
+          Text(_formatRupiah(summary.netProfit), style: AppTextStyles.heading3()),
           const SizedBox(height: AppSpacing.sm),
-          ActionCardButton(
-            title: 'Catat Biaya & Nota',
-            subtitle: 'Foto dan simpan bukti nota',
-            leadingIcon: Icons.receipt_long,
-            onTap: () => widget.onNavigateToTab?.call(2),
-          ),
+          const Divider(height: 1, color: AppColors.inputBorder),
           const SizedBox(height: AppSpacing.sm),
-          ActionCardButton(
-            title: 'Rapor Profit',
-            subtitle: 'Lihat evaluasi untung-rugi',
-            leadingIcon: Icons.analytics_outlined,
-            trailingIcon: Icons.chevron_right,
-            onTap: () => widget.onNavigateToTab?.call(3),
+
+          // ── Penjualan | Pengeluaran ──
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _AmountColumn(
+                    label: 'Penjualan',
+                    amount: summary.totalSales,
+                    color: AppColors.success,
+                  ),
+                ),
+                const VerticalDivider(width: AppSpacing.lg, color: AppColors.inputBorder),
+                Expanded(
+                  child: _AmountColumn(
+                    label: 'Pengeluaran',
+                    amount: summary.totalExpense,
+                    color: AppColors.error,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Satu kolom label + nominal (dipakai di kartu estimasi).
+class _AmountColumn extends StatelessWidget {
+  const _AmountColumn({
+    required this.label,
+    required this.amount,
+    required this.color,
+  });
+
+  final String label;
+  final double amount;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.bodySmall()),
+        const SizedBox(height: 2),
+        Text(_formatRupiah(amount), style: AppTextStyles.titleSmall(color: color)),
+      ],
+    );
+  }
+}
+
+/// Grid 2×2 kartu modul yang membuka tab masing-masing.
+class _ModuleGrid extends StatelessWidget {
+  const _ModuleGrid({required this.onNavigateToTab});
+
+  final void Function(int index)? onNavigateToTab;
+
+  // Data kartu modul (list berisi objek _ModuleItem)
+  static const List<_ModuleItem> _modules = [
+    _ModuleItem(
+      title: 'Lokasi & Sesi',
+      subtitle: 'Tempat jualan & buka lapak',
+      icon: Icons.location_on_outlined,
+      tabIndex: 1,
+    ),
+    _ModuleItem(
+      title: 'Pengeluaran',
+      subtitle: 'Catat biaya & foto nota',
+      icon: Icons.receipt_long_outlined,
+      tabIndex: 2,
+    ),
+    _ModuleItem(
+      title: 'Penjualan',
+      subtitle: 'Catat produk terjual',
+      icon: Icons.shopping_bag_outlined,
+      tabIndex: 3,
+    ),
+    _ModuleItem(
+      title: 'Evaluasi Lokasi',
+      subtitle: 'Peringkat & tren laba',
+      icon: Icons.bar_chart,
+      tabIndex: 4,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    // M3: GridView.count — grid 2 kolom
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true, // tinggi grid mengikuti isi (berada di dalam ListView)
+      physics: const NeverScrollableScrollPhysics(), // scroll ikut ListView induk
+      mainAxisSpacing: AppSpacing.md,
+      crossAxisSpacing: AppSpacing.md,
+      childAspectRatio: 1.15, // lebar : tinggi kartu
+      children: [
+        for (final module in _modules)
+          _ModuleCard(
+            item: module,
+            onTap: () => onNavigateToTab?.call(module.tabIndex),
+          ),
+      ],
+    );
+  }
+}
+
+/// Data satu kartu modul (M2: class + constructor).
+class _ModuleItem {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  /// Index tab tujuan di bottom navigation.
+  final int tabIndex;
+
+  const _ModuleItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.tabIndex,
+  });
+}
+
+/// Satu kartu modul: ikon dalam kotak, judul, keterangan.
+class _ModuleCard extends StatelessWidget {
+  const _ModuleCard({required this.item, required this.onTap});
+
+  final _ModuleItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DashboardCard(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Ikon dalam kotak oranye muda
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.accentLight,
+                    borderRadius: BorderRadius.circular(AppSpacing.borderRadiusCard),
+                  ),
+                  child: Icon(item.icon, color: AppColors.primaryDark, size: 22),
+                ),
+                // Spacer: dorong judul ke bawah kartu (tinggi kartu tetap dari GridView)
+                const Spacer(),
+                // maxLines 1: judul tidak turun 2 baris → tidak overflow
+                Text(
+                  item.title,
+                  style: AppTextStyles.titleSmall(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  item.subtitle,
+                  style: AppTextStyles.bodySmall(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

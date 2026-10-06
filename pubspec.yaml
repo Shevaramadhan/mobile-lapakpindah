@@ -53,6 +53,8 @@ dependencies:
 
   # Path utilities for database
   path: ^1.9.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_test:
