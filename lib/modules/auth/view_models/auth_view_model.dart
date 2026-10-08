@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:lapakpindah/data/auth_repository.dart';
-import 'package:lapakpindah/models/app_user.dart';
+// foundation.dart (bukan material.dart): ViewModel hanya butuh ChangeNotifier,
+// tidak bergantung pada widget UI.
+import 'package:flutter/foundation.dart';
+import 'package:lapakpindah/modules/auth/models/app_user.dart';
+import 'package:lapakpindah/modules/auth/repositories/auth_repository.dart';
 
 /// ViewModel autentikasi (M3: MVVM).
 ///
 /// View (LoginScreen) → ViewModel (kelas ini) → Model/Data (AuthRepository).
-/// Tugasnya: menyimpan state login untuk UI, memanggil repository,
-/// dan mengingat akun di perangkat (shared_preferences).
+/// Tugasnya: menyimpan state login untuk UI dan memanggil repository.
+/// Urusan penyimpanan data (termasuk "ingat akun") ada di repository.
 class AuthViewModel extends ChangeNotifier {
   // ── Sumber data ──
   final _repository = AuthRepository();
@@ -26,8 +27,11 @@ class AuthViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get rememberDevice => _rememberDevice;
 
-  // ── Key penyimpanan di perangkat ──
-  static const String _keyIdentifier = 'logged_in_identifier';
+  // ── Info akun demo (ditampilkan di halaman "Buat akun") ──
+  // View membaca lewat ViewModel, tidak langsung ke repository (M3: MVVM).
+  static String get demoPhone => AuthRepository.demoPhone;
+  static String get demoEmail => AuthRepository.demoEmail;
+  static String get demoPin => AuthRepository.demoPin;
 
   /// Toggle checkbox "Ingat akun ini di perangkat ini".
   void toggleRememberDevice(bool value) {
@@ -51,9 +55,9 @@ class AuthViewModel extends ChangeNotifier {
 
       // 3. Dicentang → ingat akun; tidak dicentang → hapus akun yang dulu diingat
       if (_rememberDevice) {
-        await _saveSession(identifier);
+        await _repository.rememberAccount(identifier);
       } else {
-        await _clearSession();
+        await _repository.forgetAccount();
       }
       return true;
     } on AuthException catch (e) {
@@ -76,7 +80,7 @@ class AuthViewModel extends ChangeNotifier {
   /// Logout dan hapus akun yang diingat.
   Future<void> logout() async {
     _user = null;
-    await _clearSession();
+    await _repository.forgetAccount();
     notifyListeners();
   }
 
@@ -85,22 +89,8 @@ class AuthViewModel extends ChangeNotifier {
   /// Dipanggil saat aplikasi dibuka. Jika ada akun yang diingat,
   /// pengguna dianggap sudah login. Mengembalikan true jika berhasil.
   Future<bool> checkSavedSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    final identifier = prefs.getString(_keyIdentifier);
-    if (identifier == null) return false;
-
-    _user = await _repository.findByIdentifier(identifier);
+    _user = await _repository.getRememberedAccount();
     notifyListeners();
     return _user != null;
-  }
-
-  Future<void> _saveSession(String identifier) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyIdentifier, identifier);
-  }
-
-  Future<void> _clearSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyIdentifier);
   }
 }

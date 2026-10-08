@@ -3,13 +3,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:lapakpindah/core/theme/app_colors.dart';
 
-/// Peta lokasi lapak memakai OpenStreetMap (gratis, tanpa API key).
+/// Peta sebuah lokasi memakai OpenStreetMap (gratis, tanpa API key).
+///
+/// Widget BERSAMA: dipakai Beranda dan bisa dipakai modul lain.
+/// Widget ini hanya MENAMPILKAN koordinat yang diberikan lewat parameter;
+/// tidak mengakses GPS sendiri.
 ///
 /// Butuh koneksi internet untuk memuat gambar peta (tile).
-/// Tombol di kanan atas mengembalikan tampilan ke titik lapak.
-/// GPS posisi pengguna yang sebenarnya akan dikerjakan di Modul 1.
-class SessionMap extends StatefulWidget {
-  const SessionMap({
+/// Tombol di kanan atas mengembalikan tampilan ke titik lokasi.
+class LocationMap extends StatefulWidget {
+  const LocationMap({
     super.key,
     required this.latitude,
     required this.longitude,
@@ -19,10 +22,10 @@ class SessionMap extends StatefulWidget {
   final double longitude;
 
   @override
-  State<SessionMap> createState() => _SessionMapState();
+  State<LocationMap> createState() => _LocationMapState();
 }
 
-class _SessionMapState extends State<SessionMap> {
+class _LocationMapState extends State<LocationMap> {
   // ── Pengaturan peta ──
   static const double _initialZoom = 16;
 

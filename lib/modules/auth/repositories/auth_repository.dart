@@ -1,4 +1,5 @@
-import '../models/app_user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lapakpindah/modules/auth/models/app_user.dart';
 
 /// Exception khusus untuk kegagalan login (nomor/email atau PIN salah).
 class AuthException implements Exception {
@@ -9,12 +10,16 @@ class AuthException implements Exception {
   String toString() => message;
 }
 
-/// Data layer autentikasi.
+/// Data layer autentikasi (M3: lapisan Data pada MVVM).
 ///
+/// Tugasnya: mengecek akun dan mengingat akun di perangkat.
 /// SEMENTARA: belum memakai database. Akun demo disimpan di memori.
 /// Saat SQLite dipakai, cukup isi method di kelas ini yang diganti;
 /// ViewModel dan UI tidak perlu diubah.
 class AuthRepository {
+  // ── Key penyimpanan "ingat akun" di perangkat (shared_preferences) ──
+  static const String _keyRememberedIdentifier = 'logged_in_identifier';
+
   // ── Akun demo (dummy) ──
   // Bisa login dengan nomor WA ATAU email, PIN sama.
   static const String demoPhone = '081234567890';
@@ -53,6 +58,28 @@ class AuthRepository {
     final normalized = normalizeIdentifier(identifier);
     final isMatch = normalized == _demoUser.phone || normalized == _demoUser.email;
     return isMatch ? _demoUser : null;
+  }
+
+  // ── Ingat akun di perangkat ──
+
+  /// Menyimpan nomor/email agar aplikasi bisa login otomatis saat dibuka lagi.
+  Future<void> rememberAccount(String identifier) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyRememberedIdentifier, identifier);
+  }
+
+  /// Menghapus akun yang diingat (saat logout atau checkbox tidak dicentang).
+  Future<void> forgetAccount() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyRememberedIdentifier);
+  }
+
+  /// Mengembalikan user yang diingat di perangkat, atau null jika tidak ada.
+  Future<AppUser?> getRememberedAccount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final identifier = prefs.getString(_keyRememberedIdentifier);
+    if (identifier == null) return null;
+    return findByIdentifier(identifier);
   }
 
   // ── Normalisasi input ──

@@ -1,6 +1,12 @@
+/// Kumpulan aturan validasi form yang dipakai ulang (M4: Form Validation).
+///
+/// Aturan validator di Flutter:
+/// - return null    → input VALID
+/// - return 'pesan' → input TIDAK VALID, pesan tampil di bawah field
 class Validators {
   Validators._();
 
+  /// Wajib diisi (tidak boleh kosong atau hanya spasi).
   static String? requiredField(String? value, {String fieldName = 'Field ini'}) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName wajib diisi';
@@ -8,6 +14,7 @@ class Validators {
     return null;
   }
 
+  /// Format email, contoh "nama@gmail.com".
   static String? email(String? value) {
     final requiredError = requiredField(value, fieldName: 'Email');
     if (requiredError != null) return requiredError;
@@ -44,12 +51,7 @@ class Validators {
     return null;
   }
 
-  static String? password(String? value) {
-    if (value == null || value.isEmpty) return 'Password wajib diisi';
-    if (value.length < 8) return 'Password minimal 8 karakter';
-    return null;
-  }
-
+  /// Minimal [min] karakter (misal untuk catatan atau nama).
   static String? minLength(
     String? value,
     int min, {
@@ -61,16 +63,6 @@ class Validators {
     if (value!.trim().length < min) {
       return '$fieldName minimal $min karakter';
     }
-    return null;
-  }
-
-  static String? rating(String? value) {
-    final requiredError = requiredField(value, fieldName: 'Rating');
-    if (requiredError != null) return requiredError;
-
-    final number = int.tryParse(value!.trim());
-    if (number == null) return 'Rating harus berupa angka';
-    if (number < 1 || number > 5) return 'Rating harus di antara 1 sampai 5';
     return null;
   }
 }

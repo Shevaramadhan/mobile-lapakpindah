@@ -1,16 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:lapakpindah/data/dashboard_repository.dart';
-import 'package:lapakpindah/models/dashboard_summary.dart';
-import 'package:lapakpindah/widgets/state_views.dart';
+// foundation.dart (bukan material.dart): ViewModel hanya butuh ChangeNotifier,
+// tidak bergantung pada widget UI.
+import 'package:flutter/foundation.dart';
+import 'package:lapakpindah/core/utils/view_status.dart'; // murni Dart, bukan file UI
+import 'package:lapakpindah/modules/home/models/dashboard_summary.dart';
+import 'package:lapakpindah/modules/home/repositories/home_repository.dart';
 
-/// ViewModel dashboard / Beranda (M3: MVVM).
+/// ViewModel Beranda (M3: MVVM).
 ///
-/// View (HomeScreen) → ViewModel (kelas ini) → Model/Data (DashboardRepository).
+/// View (HomeScreen) → ViewModel (kelas ini) → Model/Data (HomeRepository).
 /// ViewModel menyimpan state tampilan dan memberi tahu View lewat
 /// `notifyListeners()` setiap kali state berubah.
-class DashboardViewModel extends ChangeNotifier {
+class HomeViewModel extends ChangeNotifier {
   // ── Sumber data ──
-  final _repository = DashboardRepository();
+  final _repository = HomeRepository();
 
   // ── State ──
   ViewStatus _status = ViewStatus.loading;

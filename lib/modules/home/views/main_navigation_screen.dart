@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/core/theme/app_text_styles.dart';
-import 'package:lapakpindah/modules/dashboard/home_screen.dart';
+import 'package:lapakpindah/modules/home/views/home_screen.dart';
 
 /// Screen utama setelah login: bottom navigation 5 tab.
 ///

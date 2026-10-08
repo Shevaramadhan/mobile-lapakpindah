@@ -1,12 +1,12 @@
-import '../models/dashboard_summary.dart';
+import 'package:lapakpindah/modules/home/models/dashboard_summary.dart';
 
-/// Data layer dashboard (Beranda).
+/// Data layer Beranda (M3: lapisan Data pada MVVM).
 ///
 /// SEMENTARA: belum memakai database dan belum terhubung ke modul lain.
-/// Mengembalikan data jadi agar tampilan dashboard bisa dibangun dulu.
-/// Saat Modul 1–3 selesai, isi method ini diganti dengan data asli;
-/// ViewModel dan UI tidak perlu diubah.
-class DashboardRepository {
+/// Mengembalikan data jadi agar tampilan Beranda bisa dibangun dulu.
+/// Saat Modul 1–3 selesai, isi method ini diganti dengan data asli
+/// (memanggil repository modul lain); ViewModel dan UI tidak perlu diubah.
+class HomeRepository {
   // ── State dummy ──
   // `static` agar status tetap sama walaupun repository dibuat ulang.
   static bool _isSessionActive = true;

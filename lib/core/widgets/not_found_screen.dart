@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../routes/app_routes.dart';
+import 'package:lapakpindah/routes/app_routes.dart';
 
-/// Halaman cadangan ketika route tidak dikenal atau argument tidak valid.
+/// Halaman 404: dibuka saat nama route tidak terdaftar (AppRoutes.onUnknownRoute).
+/// Ditaruh di core karena dipakai oleh seluruh aplikasi, bukan satu modul.
 class NotFoundScreen extends StatelessWidget {
   final String? routeName;
   final String message;

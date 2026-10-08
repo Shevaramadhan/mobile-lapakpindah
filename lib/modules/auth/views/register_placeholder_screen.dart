@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/data/auth_repository.dart';
+import 'package:lapakpindah/modules/auth/view_models/auth_view_model.dart';
 
 /// Placeholder screen untuk registrasi — akan diimplementasi nanti.
 class RegisterPlaceholderScreen extends StatelessWidget {
@@ -67,17 +67,17 @@ class RegisterPlaceholderScreen extends StatelessWidget {
                   children: [
                     Text('Akun Demo', style: AppTextStyles.labelMedium()),
                     const SizedBox(height: AppSpacing.xs),
-                    // Akun demo diambil dari AuthRepository agar selalu sama
+                    // Akun demo dibaca lewat AuthViewModel (View → ViewModel)
                     Text(
-                      'No. WA: ${AuthRepository.demoPhone}',
+                      'No. WA: ${AuthViewModel.demoPhone}',
                       style: AppTextStyles.bodySmall(),
                     ),
                     Text(
-                      'atau Email: ${AuthRepository.demoEmail}',
+                      'atau Email: ${AuthViewModel.demoEmail}',
                       style: AppTextStyles.bodySmall(),
                     ),
                     Text(
-                      'PIN: ${AuthRepository.demoPin}',
+                      'PIN: ${AuthViewModel.demoPin}',
                       style: AppTextStyles.bodySmall(),
                     ),
                   ],

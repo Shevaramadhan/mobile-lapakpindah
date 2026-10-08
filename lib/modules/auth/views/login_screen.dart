@@ -4,13 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/core/theme/app_text_styles.dart';
+import 'package:lapakpindah/core/utils/validators.dart';
 import 'package:lapakpindah/core/widgets/custom_button.dart';
 import 'package:lapakpindah/core/widgets/custom_text_field.dart';
-import 'package:lapakpindah/modules/auth/auth_view_model.dart';
-import 'package:lapakpindah/modules/auth/register_placeholder_screen.dart';
+import 'package:lapakpindah/core/widgets/state_views.dart';
+import 'package:lapakpindah/modules/auth/view_models/auth_view_model.dart';
 import 'package:lapakpindah/routes/app_routes.dart';
-import 'package:lapakpindah/utils/validators.dart';
-import 'package:lapakpindah/widgets/state_views.dart';
 
 /// Screen login LapakPindah: masuk dengan Nomor WA / Email + PIN 6 digit.
 class LoginScreen extends StatefulWidget {
@@ -292,13 +291,8 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           Text('Belum punya akun? ', style: AppTextStyles.bodyMedium()),
           TextButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const RegisterPlaceholderScreen(),
-                ),
-              );
-            },
+            // M4: named route, terdaftar di AppRoutes
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
               minimumSize: const Size(48, 48),
