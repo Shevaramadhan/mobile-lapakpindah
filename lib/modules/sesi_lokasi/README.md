@@ -54,6 +54,22 @@ sesi_lokasi/
 - Saat sesi dibuka, biaya tetap lokasi dicatat otomatis sebagai pengeluaran (FR-08 Modul 2) —
   cara penyambungannya disepakati dengan Anggota 2.
 
+## Practical Challenge: alur "Tambah Lokasi" (sudah dibuat)
+Data lokasi sementara disimpan **di memori** (`LocationRepository._locations`): daftar kosong saat
+aplikasi dibuka, dan kosong lagi setiap aplikasi dijalankan ulang. GPS (FR-02) menyusul.
+
+| Tahap | Yang terjadi | Kode |
+|---|---|---|
+| **Input / Event** | Tab Lokasi → tekan tombol **+** → form terbuka | `LocationListScreen._openAddForm()` → `Navigator.pushNamed(context, AppRoutes.locationForm)` |
+| **State** | Isian disimpan di `TextEditingController`; saat simpan `isSaving` = true, lalu `locations` bertambah dan `notifyListeners()` membangun ulang layar | `LocationFormScreen`, `LocationViewModel.addLocation()` |
+| **Validation** | Nama: wajib, 3–50 karakter, belum dipakai lokasi lain (huruf besar/kecil dianggap sama). Catatan: opsional, maks 100. Salah → pesan merah di bawah isian, tetap di form. Repository juga menolak nama ganda (pengaman kedua) | `_validateName()`, `Validators.minLength/maxLength`, `LocationRepository.add()` |
+| **Feedback** | Daftar kosong → `EmptyView`; tombol Simpan berputar (loading); gagal → `ErrorBanner`; berhasil → SnackBar `Lokasi "…" ditambahkan` | `location_list_screen.dart`, `location_form_screen.dart` |
+| **Navigation / Result** | Berhasil → `Navigator.pop(context, lokasiBaru)` mengirim lokasi baru ke layar Daftar; Daftar menerima `result` untuk SnackBar dan menampilkan kartu baru | `_save()` → `_openAddForm()` (`if (result is Location)`) |
+
+File: `models/location.dart`, `repositories/location_repository.dart`, `view_models/location_view_model.dart`,
+`views/location_list_screen.dart`, `views/location_form_screen.dart`, `views/widgets/location_card.dart`.
+Test otomatis: `test/location_workflow_test.dart`.
+
 ---
 
 ## Aturan MVVM bersama (berlaku untuk semua modul)

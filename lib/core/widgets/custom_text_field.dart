@@ -20,6 +20,7 @@ class LapakTextField extends StatelessWidget {
     this.textInputAction,
     this.inputFormatters,
     this.maxLength,
+    this.maxLines = 1,
     this.onFieldSubmitted,
   });
 
@@ -48,6 +49,9 @@ class LapakTextField extends StatelessWidget {
 
   /// Batas jumlah karakter. Penghitung karakter disembunyikan.
   final int? maxLength;
+
+  /// Jumlah baris kolom; lebih dari 1 untuk isian panjang (misal catatan).
+  final int maxLines;
 
   /// Dipanggil saat pengguna menekan tombol aksi keyboard.
   final ValueChanged<String>? onFieldSubmitted;
@@ -95,6 +99,7 @@ class LapakTextField extends StatelessWidget {
           textInputAction: textInputAction,
           inputFormatters: inputFormatters,
           maxLength: maxLength,
+          maxLines: maxLines,
           onFieldSubmitted: onFieldSubmitted,
           decoration: InputDecoration(
             hintText: hintText,

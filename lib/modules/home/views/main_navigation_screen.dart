@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/modules/home/views/home_screen.dart';
+import 'package:lapakpindah/modules/sesi_lokasi/views/location_list_screen.dart';
 
 /// Screen utama setelah login: bottom navigation 5 tab.
 ///
-/// Tab 0 = Beranda (dashboard). Tab 1–4 = modul tiap anggota,
-/// sementara berisi placeholder sampai modulnya dikerjakan.
+/// Tab 0 = Beranda (dashboard). Tab 1 = Lokasi (Modul 1).
+/// Tab 2–4 = modul anggota lain, sementara berisi placeholder.
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -37,11 +38,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         index: _currentIndex,
         children: [
           HomeScreen(onNavigateToTab: _onTabSelected),
-          const _PlaceholderTab(
-            title: 'Lokasi & Sesi',
-            module: 'Modul 1',
-            icon: Icons.location_on_outlined,
-          ),
+          const LocationListScreen(), // Modul 1: Daftar Lokasi
           const _PlaceholderTab(
             title: 'Pengeluaran',
             module: 'Modul 2',
