@@ -22,6 +22,8 @@ class LapakTextField extends StatelessWidget {
     this.maxLength,
     this.maxLines = 1,
     this.onFieldSubmitted,
+    this.onChanged,
+
   });
 
   // ── Label & isi ──
@@ -37,6 +39,8 @@ class LapakTextField extends StatelessWidget {
   final bool obscureText;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
+
 
   /// false = field dikunci (misal saat proses login berjalan).
   final bool enabled;
@@ -101,6 +105,7 @@ class LapakTextField extends StatelessWidget {
           maxLength: maxLength,
           maxLines: maxLines,
           onFieldSubmitted: onFieldSubmitted,
+          onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hintText,
             // Sembunyikan penghitung "0/6" bawaan maxLength

@@ -49,6 +49,22 @@ Nama file di atas hanya usulan; silakan disesuaikan pemilik modul, asalkan tetap
 
 ---
 
+## Practical Challenge: alur "Tambah Pengeluaran" (FR-06 core workflow)
+Data pengeluaran sementara disimpan **di memori** (`PengeluaranRepository._expenses`): dimulai dengan 5 item seed data sesuai Figma Frame 1 (total Rp 160.000, batas Rp 200.000).
+
+| Tahap | Yang terjadi | Kode |
+|---|---|---|
+| **Input / Event** | Tab Biaya → tekan FAB **+** → form `TambahPengeluaranScreen` terbuka dengan `sessionId` dari sesi aktif | `PengeluaranScreen._openAddForm()` → `Navigator.push()` + `ChangeNotifierProvider(TambahPengeluaranViewModel)` |
+| **State** | Isian disimpan di `_descriptionController` & `_amountController`; saat ketik, `TambahPengeluaranViewModel` update state (`_description`, `_amountText`, `canSave`). Saat simpan: `isSaving` = true, lalu `expenses` di `PengeluaranViewModel` bertambah via `applyNewExpense()` | `TambahPengeluaranScreen`, `TambahPengeluaranViewModel.setDescription/setAmountText/save()`, `PengeluaranViewModel.applyNewExpense()` |
+| **Validation** | Keterangan: wajib diisi (tidak boleh kosong/spasi). Nominal: wajib diisi dan harus > Rp 0. Salah → pesan merah di bawah field (TextFormField validator). Tombol Simpan nonaktif (`onPressed = null`) sampai kedua isian valid. Repository juga validasi ulang (pengaman kedua) | `TambahPengeluaranViewModel.validateDescription/validateAmount()`, `_canSave`, `PengeluaranRepository.addExpense()` |
+| **Feedback** | Tombol Simpan abu/nonaktif saat form kosong (Frame 2, 7); pesan error inline merah saat validasi gagal; tombol berubah "Menyimpan..." + spinner loading (Frame 8); gagal → `ErrorBanner` merah + tombol jadi "Coba simpan lagi" (Frame 9); berhasil → SnackBar hijau "Pengeluaran ditambahkan!" + kartu baru muncul teratas list (Frame 10) | `LapakPrimaryButton(isLoading)`, `ErrorBanner`, `ScaffoldMessenger.showSnackBar()`, `ExpenseCard` |
+| **Navigation / Result** | Berhasil → `Navigator.pop(context, saved)` mengirim objek `Expense` baru ke `PengeluaranScreen`; layar Daftar menerima `result`, panggil `vm.applyNewExpense(result)` untuk update list secara reaktif, tampilkan SnackBar, dan total pengeluaran + progress bar batas (FR-09) otomatis terhitung ulang | `TambahPengeluaranViewModel.save()` → `_openAddForm()` (`if (result != null)`) → `PengeluaranViewModel.applyNewExpense()` |
+
+File: `models/expense.dart`, `repositories/pengeluaran_repository.dart`, `view_models/pengeluaran_view_model.dart`, `view_models/tambah_pengeluaran_view_model.dart`, `views/pengeluaran_screen.dart`, `views/tambah_pengeluaran_screen.dart`, `views/widgets/expense_card.dart`, `views/widgets/expense_limit_card.dart`, `views/widgets/active_session_bar.dart`.  
+Test otomatis: `test/pengeluaran_workflow_test.dart`.
+
+---
+
 ## Aturan MVVM bersama (berlaku untuk semua modul)
 1. **Arah ketergantungan:** View → ViewModel → Repository → Model.
    View **tidak** meng-import repository secara langsung.

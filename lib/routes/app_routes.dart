@@ -22,6 +22,7 @@ class AppRoutes {
   static const String register = '/register';
   static const String home = '/home';
   static const String locationForm = '/lokasi/tambah'; // Modul 1
+  static const String expenseForm = '/pengeluaran/tambah'; // Modul 2
 
   // ── 2. Daftar route: nama → layar ──
   // Jika sebuah layar butuh data, kirim lewat `arguments` lalu baca di
