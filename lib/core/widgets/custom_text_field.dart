@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
-import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 
-/// Input field kustom LapakPindah — dengan label, icon, shadow.
+/// Input field LapakPindah: label di atas + TextFormField.
+/// Tampilan kolom mengikuti inputDecorationTheme di app_theme.dart.
 class LapakTextField extends StatelessWidget {
   const LapakTextField({
     super.key,
@@ -60,6 +58,9 @@ class LapakTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -67,14 +68,14 @@ class LapakTextField extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: AppTextStyles.labelMedium()),
+            Text(label, style: textTheme.labelLarge),
             if (trailingLabel != null)
               GestureDetector(
                 onTap: onTrailingTap,
                 child: Text(
                   trailingLabel!,
-                  style: AppTextStyles.labelMedium(
-                    color: AppColors.primaryDark,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
                   ),
                 ),
               ),
@@ -82,70 +83,25 @@ class LapakTextField extends StatelessWidget {
         ),
         const SizedBox(height: 6),
 
-        // ── Kolom input dengan bayangan ──
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadow,
-                offset: Offset(0, 4),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          child: TextFormField(
-            controller: controller,
-            obscureText: obscureText,
-            validator: validator,
-            keyboardType: keyboardType,
-            enabled: enabled,
-            textInputAction: textInputAction,
-            inputFormatters: inputFormatters,
-            maxLength: maxLength,
-            onFieldSubmitted: onFieldSubmitted,
-            style: AppTextStyles.inputText(color: AppColors.textPrimary),
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: AppTextStyles.inputText(),
-              // Sembunyikan penghitung "0/6" bawaan maxLength
-              counterText: '',
-              prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, color: AppColors.inputIcon, size: 18)
-                  : null,
-              suffixIcon: suffixIcon,
-              filled: true,
-              fillColor: AppColors.surfaceCard,
-              contentPadding: EdgeInsets.only(
-                left: prefixIcon != null ? 44 : 14,
-                right: 14,
-                top: 13.5,
-                bottom: 13.5,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-                borderSide: const BorderSide(color: AppColors.inputBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-                borderSide: const BorderSide(color: AppColors.inputBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-                borderSide: const BorderSide(color: AppColors.error),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-                borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-              ),
-            ),
+        // ── Kolom input ──
+        // Garis, warna, hint, dan warna ikon diatur inputDecorationTheme
+        // (app_theme.dart); teks ketikan memakai textTheme.bodyLarge.
+        TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          validator: validator,
+          keyboardType: keyboardType,
+          enabled: enabled,
+          textInputAction: textInputAction,
+          inputFormatters: inputFormatters,
+          maxLength: maxLength,
+          onFieldSubmitted: onFieldSubmitted,
+          decoration: InputDecoration(
+            hintText: hintText,
+            // Sembunyikan penghitung "0/6" bawaan maxLength
+            counterText: '',
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18) : null,
+            suffixIcon: suffixIcon,
           ),
         ),
       ],

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/modules/home/views/widgets/dashboard_card.dart';
 
 /// Grid 2×2 kartu modul yang membuka tab masing-masing.
@@ -45,7 +43,8 @@ class ModuleGrid extends StatelessWidget {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true, // tinggi grid mengikuti isi (berada di dalam ListView)
-      physics: const NeverScrollableScrollPhysics(), // scroll ikut ListView induk
+      physics:
+          const NeverScrollableScrollPhysics(), // scroll ikut ListView induk
       mainAxisSpacing: AppSpacing.md,
       crossAxisSpacing: AppSpacing.md,
       childAspectRatio: 1.15, // lebar : tinggi kartu
@@ -86,6 +85,10 @@ class _ModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Gaya teks & warna dari tema (app_theme.dart)
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return DashboardCard(
       child: Material(
         color: Colors.transparent,
@@ -96,29 +99,38 @@ class _ModuleCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Ikon dalam kotak oranye muda
+                // Ikon dalam kotak oranye muda (primaryContainer)
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: AppSpacing.logoSize,
+                  height: AppSpacing.logoSize,
                   decoration: BoxDecoration(
-                    color: AppColors.accentLight,
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.borderRadiusCard),
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(
+                      AppSpacing.borderRadiusCard,
+                    ),
                   ),
-                  child: Icon(item.icon, color: AppColors.primaryDark, size: 22),
+                  child: Icon(
+                    item.icon,
+                    color: colorScheme.onPrimaryContainer,
+                    size: 20,
+                  ),
                 ),
                 // Spacer: dorong judul ke bawah kartu (tinggi kartu tetap dari GridView)
                 const Spacer(),
-                // maxLines 1: judul tidak turun 2 baris → tidak overflow
+                // maxLines 1: judul tidak turun 2 baris → tidak overflow.
+                // Figma: judul kartu modul 14 Bold → titleSmall diperkecil.
                 Text(
                   item.title,
-                  style: AppTextStyles.titleSmall(),
+                  style: textTheme.titleSmall?.copyWith(
+                    fontSize: 14,
+                    height: 18 / 14,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   item.subtitle,
-                  style: AppTextStyles.bodySmall(),
+                  style: textTheme.labelMedium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

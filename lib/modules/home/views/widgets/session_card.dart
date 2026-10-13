@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/core/widgets/location_map.dart';
 import 'package:lapakpindah/modules/home/models/dashboard_summary.dart';
 import 'package:lapakpindah/modules/home/views/widgets/dashboard_card.dart';
@@ -26,6 +24,10 @@ class ActiveSessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Gaya teks & warna dari tema (app_theme.dart)
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return DashboardCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -39,16 +41,15 @@ class ActiveSessionCard extends StatelessWidget {
                     longitude: summary.longitude!,
                   )
                 : Container(
-                    color: AppColors.surfaceChip,
+                    color: colorScheme.surfaceContainer,
                     alignment: Alignment.center,
                     child: Text(
                       'Koordinat lokasi belum ditandai',
-                      style: AppTextStyles.bodySmall(),
+                      style: textTheme.bodySmall,
                     ),
                   ),
           ),
-          const Divider(height: 1, color: AppColors.inputBorder),
-
+          const Divider(), // warna & tebal dari dividerTheme
           // ── Nama lokasi, jam, tombol tutup ──
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -60,35 +61,22 @@ class ActiveSessionCard extends StatelessWidget {
                     children: [
                       Text(
                         summary.locationName ?? '-',
-                        style: AppTextStyles.titleLarge(),
+                        style: textTheme.titleSmall,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Buka ${_formatTime(summary.openTime)} · '
                         'rencana tutup ${_formatTime(summary.plannedCloseTime)}',
-                        style: AppTextStyles.bodySmall(),
+                        style: textTheme.bodySmall,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
+                // Gaya tombol garis dari outlinedButtonTheme
                 OutlinedButton(
                   onPressed: onClose,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryDark,
-                    side: const BorderSide(color: AppColors.primary),
-                    minimumSize: const Size(48, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.borderRadius),
-                    ),
-                  ),
-                  child: Text(
-                    'Tutup lapak',
-                    style: AppTextStyles.labelMedium(
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
+                  child: const Text('Tutup lapak'),
                 ),
               ],
             ),
@@ -108,32 +96,31 @@ class ClosedSessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return DashboardCard(
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.storefront_outlined,
             size: 48,
-            color: AppColors.inputIcon,
+            color: Theme.of(context).colorScheme.outline,
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text('Belum ada sesi jualan', style: AppTextStyles.titleSmall()),
+          Text('Belum ada sesi jualan', style: textTheme.titleSmall),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Buka lapak di sebuah lokasi untuk mulai mencatat penjualan dan biaya.',
-            style: AppTextStyles.bodySmall(),
+            style: textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.md),
+          // Gaya tombol dari filledButtonTheme
           FilledButton.icon(
             onPressed: onOpen,
             icon: const Icon(Icons.store),
             label: const Text('Buka lapak'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              minimumSize: const Size(48, 48),
-            ),
           ),
         ],
       ),

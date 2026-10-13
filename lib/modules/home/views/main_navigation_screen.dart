@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/modules/home/views/home_screen.dart';
 
 /// Screen utama setelah login: bottom navigation 5 tab.
@@ -66,26 +64,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   // ── Bottom navigation kustom (item aktif berlatar oranye) ──
+  // Ukuran dari Figma: tinggi 64, jarak tepi 6.
   Widget _buildBottomNavBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceCard,
-        border: Border(top: BorderSide(color: AppColors.inputBorder)),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
       ),
-      padding: const EdgeInsets.all(AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            for (var i = 0; i < _tabs.length; i++)
-              Expanded(
-                child: _NavItem(
-                  data: _tabs[i],
-                  isActive: _currentIndex == i,
-                  onTap: () => _onTabSelected(i),
+        child: SizedBox(
+          height: AppSpacing.navBarHeight,
+          child: Row(
+            children: [
+              for (var i = 0; i < _tabs.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    data: _tabs[i],
+                    isActive: _currentIndex == i,
+                    onTap: () => _onTabSelected(i),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -106,19 +110,24 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppColors.onPrimary : AppColors.textSecondary;
+    // Warna dari tema: aktif = primary/onPrimary, tidak aktif = abu
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = isActive
+        ? colorScheme.onPrimary
+        : colorScheme.onSurfaceVariant;
+    final radius = BorderRadius.circular(6);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 1),
       child: Material(
-        color: isActive ? AppColors.primary : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppSpacing.borderRadiusCard),
+        color: isActive ? colorScheme.primary : Colors.transparent,
+        borderRadius: radius,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSpacing.borderRadiusCard),
+          borderRadius: radius,
           child: ConstrainedBox(
             // Area sentuh minimal 48dp (NFR-03)
-            constraints: const BoxConstraints(minHeight: 52),
+            constraints: const BoxConstraints(minHeight: 48),
             child: Column(
               // min: tinggi bottom nav mengikuti isi. Tanpa ini, Column
               // memenuhi seluruh layar dan isi Beranda tertutup.
@@ -129,7 +138,8 @@ class _NavItem extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   data.label,
-                  style: AppTextStyles.labelSmall(color: color),
+                  style: Theme.of(context).textTheme.labelSmall
+                      ?.copyWith(color: color),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -156,26 +166,24 @@ class _PlaceholderTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    // Gaya AppBar & latar layar dari tema
     return Scaffold(
-      backgroundColor: AppColors.surfaceBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfaceCard,
-        automaticallyImplyLeading: false,
-        title: Text(title, style: AppTextStyles.titleLarge()),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: AppColors.inputBorder),
-        ),
-      ),
+      appBar: AppBar(automaticallyImplyLeading: false, title: Text(title)),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: AppColors.inputBorder),
+            Icon(
+              icon,
+              size: 48,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
             const SizedBox(height: AppSpacing.md),
-            Text(title, style: AppTextStyles.heading2()),
+            Text(title, style: textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
-            Text('Segera hadir — $module', style: AppTextStyles.bodyMedium()),
+            Text('Segera hadir — $module', style: textTheme.bodyMedium),
           ],
         ),
       ),

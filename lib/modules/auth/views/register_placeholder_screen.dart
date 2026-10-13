@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/modules/auth/view_models/auth_view_model.dart';
 
@@ -10,17 +8,13 @@ class RegisterPlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.surfaceCard,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfaceCard,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text('Daftar Akun', style: AppTextStyles.titleLarge()),
-        elevation: 0,
-      ),
+      backgroundColor: colorScheme.surface,
+      // Tombol kembali muncul otomatis; gaya AppBar dari appBarTheme
+      appBar: AppBar(title: const Text('Daftar Akun')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xl),
@@ -31,54 +25,51 @@ class RegisterPlaceholderScreen extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceChip,
+                  color: colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(
                     AppSpacing.borderRadiusCard,
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person_add_outlined,
-                  color: AppColors.primary,
+                  color: colorScheme.primary,
                   size: 32,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Halaman Registrasi',
-                style: AppTextStyles.heading2(),
-              ),
+              Text('Halaman Registrasi', style: textTheme.titleLarge),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Fitur ini akan segera hadir.\nSilakan gunakan akun demo untuk login.',
-                style: AppTextStyles.bodyMedium(),
+                style: textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.xl),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceChip,
+                  color: colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(
                     AppSpacing.borderRadiusCard,
                   ),
-                  border: Border.all(color: AppColors.inputBorder),
+                  border: Border.all(color: colorScheme.outlineVariant),
                 ),
                 child: Column(
                   children: [
-                    Text('Akun Demo', style: AppTextStyles.labelMedium()),
+                    Text('Akun Demo', style: textTheme.labelLarge),
                     const SizedBox(height: AppSpacing.xs),
                     // Akun demo dibaca lewat AuthViewModel (View → ViewModel)
                     Text(
                       'No. WA: ${AuthViewModel.demoPhone}',
-                      style: AppTextStyles.bodySmall(),
+                      style: textTheme.bodySmall,
                     ),
                     Text(
                       'atau Email: ${AuthViewModel.demoEmail}',
-                      style: AppTextStyles.bodySmall(),
+                      style: textTheme.bodySmall,
                     ),
                     Text(
                       'PIN: ${AuthViewModel.demoPin}',
-                      style: AppTextStyles.bodySmall(),
+                      style: textTheme.bodySmall,
                     ),
                   ],
                 ),
