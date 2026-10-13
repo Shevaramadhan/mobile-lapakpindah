@@ -22,12 +22,19 @@ class PengeluaranViewModel extends ChangeNotifier {
 
   final PengeluaranRepository _repository;
 
-  // ── State layar ──
+// ── State layar ──
   ViewStatus _status = ViewStatus.loading;
   String _errorMessage = '';
   SessionInfo? _activeSession;
   List<Expense> _expenses = [];
   ExpenseLimit? _limit;
+
+  /// Kategori yang sedang difilter pada daftar (FR-07). null = semua.
+  ExpenseCategory? _selectedCategory;
+
+  /// Riwayat seluruh sesi (FR-10).
+  List<ExpenseHistoryGroup> _historyGroups = [];
+  ViewStatus _historyStatus = ViewStatus.loading;
 
   // ── Getter untuk UI ──
   ViewStatus get status => _status;
@@ -38,6 +45,19 @@ class PengeluaranViewModel extends ChangeNotifier {
   List<Expense> get expenses => _expenses;
   ExpenseLimit? get limit => _limit;
   bool get hasLimit => _limit != null;
+
+  /// Kategori terpilih untuk filter (null = semua).
+  ExpenseCategory? get selectedCategory => _selectedCategory;
+
+  /// Daftar pengeluaran sesi aktif setelah difilter kategori (FR-07).
+  List<Expense> get filteredExpenses {
+    if (_selectedCategory == null) return _expenses;
+    return _expenses.where((e) => e.category == _selectedCategory).toList();
+  }
+
+  /// Riwayat seluruh sesi (FR-10).
+  List<ExpenseHistoryGroup> get historyGroups => _historyGroups;
+  ViewStatus get historyStatus => _historyStatus;
 
   /// Total seluruh pengeluaran sesi aktif.
   double get totalExpense =>
@@ -107,7 +127,7 @@ class PengeluaranViewModel extends ChangeNotifier {
     await loadData();
   }
 
-  // ── Ubah batas (FR-09) ──
+  // ── Ubah batas (FR-08/FR-09) ──
 
   /// Menyimpan batas pengeluaran baru. Mengembalikan true jika berhasil.
   Future<bool> setLimit(double limitAmount) async {
@@ -126,5 +146,31 @@ class PengeluaranViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  // ── Filter kategori (FR-07) ──
+
+  /// Memilih kategori filter. null = tampilkan semua.
+  void setCategoryFilter(ExpenseCategory? category) {
+    if (_selectedCategory == category) return;
+    _selectedCategory = category;
+    notifyListeners();
+  }
+
+  // ── Riwayat seluruh sesi (FR-10) ──
+
+  /// Memuat riwayat pengeluaran seluruh sesi, dikelompokkan per sesi.
+  Future<void> loadHistory() async {
+    _historyStatus = ViewStatus.loading;
+    notifyListeners();
+
+    try {
+      _historyGroups = await _repository.fetchHistoryGroupedBySession();
+      _historyStatus = ViewStatus.success;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _historyStatus = ViewStatus.error;
+    }
+    notifyListeners();
   }
 }

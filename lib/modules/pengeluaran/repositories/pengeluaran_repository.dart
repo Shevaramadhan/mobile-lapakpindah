@@ -43,6 +43,7 @@ class PengeluaranRepository {
       sessionId: 'session-cfd-01',
       description: 'Gas LPG',
       amount: 40000,
+      category: ExpenseCategory.operasional,
       recordedAt: DateTime(2026, 10, 13, 9, 10),
     ),
     Expense(
@@ -50,6 +51,7 @@ class PengeluaranRepository {
       sessionId: 'session-cfd-01',
       description: 'Plastik dan sedotan',
       amount: 25000,
+      category: ExpenseCategory.kemasan,
       recordedAt: DateTime(2026, 10, 13, 8, 5),
     ),
     Expense(
@@ -57,6 +59,7 @@ class PengeluaranRepository {
       sessionId: 'session-cfd-01',
       description: 'Belanja es batu',
       amount: 35000,
+      category: ExpenseCategory.bahanBaku,
       recordedAt: DateTime(2026, 10, 13, 7, 25),
     ),
     Expense(
@@ -64,6 +67,7 @@ class PengeluaranRepository {
       sessionId: 'session-cfd-01',
       description: 'Retribusi',
       amount: 10000,
+      category: ExpenseCategory.sewaRetribusi,
       recordedAt: DateTime(2026, 10, 13, 6, 10),
       isFixedCost: true,
     ),
@@ -72,8 +76,67 @@ class PengeluaranRepository {
       sessionId: 'session-cfd-01',
       description: 'Sewa tempat',
       amount: 50000,
+      category: ExpenseCategory.sewaRetribusi,
       recordedAt: DateTime(2026, 10, 13, 6, 10),
       isFixedCost: true,
+    ),
+    // Sesi kemarin di Pasar Atas (FR-10: Riwayat)
+    Expense(
+      id: 'exp-h01',
+      sessionId: 'session-pasar-02',
+      description: 'Retribusi kebersihan',
+      amount: 5000,
+      category: ExpenseCategory.sewaRetribusi,
+      recordedAt: DateTime(2026, 10, 12, 7, 0),
+      isFixedCost: true,
+    ),
+    Expense(
+      id: 'exp-h02',
+      sessionId: 'session-pasar-02',
+      description: 'Bahan baku jeruk 5kg',
+      amount: 75000,
+      category: ExpenseCategory.bahanBaku,
+      recordedAt: DateTime(2026, 10, 12, 7, 30),
+    ),
+    // Sesi 2 hari lalu di GOR Agus Salim (FR-10: Riwayat)
+    Expense(
+      id: 'exp-h03',
+      sessionId: 'session-gor-03',
+      description: 'Sewa stan mingguan',
+      amount: 100000,
+      category: ExpenseCategory.sewaRetribusi,
+      recordedAt: DateTime(2026, 10, 11, 6, 0),
+      isFixedCost: true,
+    ),
+    Expense(
+      id: 'exp-h04',
+      sessionId: 'session-gor-03',
+      description: 'Cup plastik 100 pcs',
+      amount: 30000,
+      category: ExpenseCategory.kemasan,
+      recordedAt: DateTime(2026, 10, 11, 8, 15),
+    ),
+  ];
+
+  // ── Daftar seluruh sesi untuk Riwayat (FR-10) ──
+  final List<SessionInfo> _allSessions = [
+    SessionInfo(
+      id: 'session-cfd-01',
+      locationName: 'CFD Jam Gadang',
+      openTime: DateTime(2026, 10, 13, 6, 10),
+      plannedCloseTime: DateTime(2026, 10, 13, 10, 30),
+    ),
+    SessionInfo(
+      id: 'session-pasar-02',
+      locationName: 'Pasar Atas Bukittinggi',
+      openTime: DateTime(2026, 10, 12, 6, 30),
+      plannedCloseTime: DateTime(2026, 10, 12, 12, 0),
+    ),
+    SessionInfo(
+      id: 'session-gor-03',
+      locationName: 'GOR Agus Salim',
+      openTime: DateTime(2026, 10, 11, 5, 45),
+      plannedCloseTime: DateTime(2026, 10, 11, 11, 0),
     ),
   ];
 
@@ -116,6 +179,7 @@ class PengeluaranRepository {
     required String sessionId,
     required String description,
     required double amount,
+    ExpenseCategory category = ExpenseCategory.bahanBaku,
     String? receiptPhotoPath,
     bool isFixedCost = false,
   }) async {
@@ -135,6 +199,7 @@ class PengeluaranRepository {
       sessionId: sessionId,
       description: trimmed,
       amount: amount,
+      category: category,
       receiptPhotoPath: receiptPhotoPath,
       recordedAt: DateTime.now(),
       isFixedCost: isFixedCost,
@@ -145,7 +210,42 @@ class PengeluaranRepository {
     return newExpense;
   }
 
-  // ── Update Batas (FR-09) ──
+  // ── Read Riwayat (FR-10) ──
+
+  /// Mengambil seluruh pengeluaran dari semua sesi, terurut terbaru di atas.
+  /// Dipakai layar Riwayat untuk menampilkan catatan lintas sesi/lokasi.
+  Future<List<Expense>> fetchAllExpenses() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final list = [..._expenses];
+    list.sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+    return List.unmodifiable(list);
+  }
+
+  /// Riwayat dikelompokkan per sesi (lokasi + tanggal), terbaru di atas.
+  /// Setiap grup berisi daftar pengeluaran sesi tersebut.
+  Future<List<ExpenseHistoryGroup>> fetchHistoryGroupedBySession() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final groups = <ExpenseHistoryGroup>[];
+
+    // Urutkan sesi terbaru di atas
+    final sessions = [..._allSessions]
+      ..sort((a, b) => b.openTime.compareTo(a.openTime));
+
+    for (final session in sessions) {
+      final items = _expenses.where((e) => e.sessionId == session.id).toList()
+        ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+      if (items.isEmpty) continue;
+      final total = items.fold<double>(0, (sum, e) => sum + e.amount);
+      groups.add(ExpenseHistoryGroup(
+        session: session,
+        expenses: List.unmodifiable(items),
+        total: total,
+      ));
+    }
+    return List.unmodifiable(groups);
+  }
+
+  // ── Update Batas (FR-08 / FR-09) ──
 
   /// Mengatur atau mengubah batas pengeluaran sebuah sesi.
   Future<ExpenseLimit> setLimit({
@@ -163,4 +263,17 @@ class PengeluaranRepository {
     _limits[sessionId] = limit;
     return limit;
   }
+}
+
+/// Satu kelompok riwayat: sesi + daftar pengeluaran + total (FR-10).
+class ExpenseHistoryGroup {
+  final SessionInfo session;
+  final List<Expense> expenses;
+  final double total;
+
+  const ExpenseHistoryGroup({
+    required this.session,
+    required this.expenses,
+    required this.total,
+  });
 }

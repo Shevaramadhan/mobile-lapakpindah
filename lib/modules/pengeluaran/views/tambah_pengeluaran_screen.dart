@@ -5,6 +5,7 @@ import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/core/widgets/custom_button.dart';
 import 'package:lapakpindah/core/widgets/custom_text_field.dart';
 import 'package:lapakpindah/core/widgets/state_views.dart';
+import 'package:lapakpindah/modules/pengeluaran/models/expense.dart';
 import 'package:lapakpindah/modules/pengeluaran/view_models/tambah_pengeluaran_view_model.dart';
 
 /// Form Tambah Pengeluaran (Figma Frame 2, 7, 8, 9).
@@ -105,6 +106,8 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
                     onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   ),
                   const SizedBox(height: AppSpacing.md),
+                  _buildCategoryDropdown(vm),
+                  const SizedBox(height: AppSpacing.md),
                   Text('Jumlah biaya', style: textTheme.labelLarge),
                   const SizedBox(height: 6),
                   TextFormField(
@@ -202,6 +205,35 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCategoryDropdown(TambahPengeluaranViewModel vm) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Kategori pengeluaran', style: textTheme.labelLarge),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<ExpenseCategory>(
+          initialValue: vm.category,
+          isExpanded: true,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+          items: ExpenseCategory.values.map((cat) {
+            return DropdownMenuItem(
+              value: cat,
+              child: Text(cat.label),
+            );
+          }).toList(),
+          onChanged: vm.isSaving
+              ? null
+              : (cat) {
+                  if (cat != null) vm.setCategory(cat);
+                },
+        ),
+      ],
     );
   }
 }

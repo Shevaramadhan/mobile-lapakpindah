@@ -21,6 +21,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
   // ── State form ──
   String _description = '';
   String _amountText = '';
+  ExpenseCategory _category = ExpenseCategory.bahanBaku;
   bool _isSaving = false;
   String? _saveError;
   String? _receiptPhotoPath;
@@ -28,6 +29,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
   // ── Getter untuk UI ──
   String get description => _description;
   String get amountText => _amountText;
+  ExpenseCategory get category => _category;
   bool get isSaving => _isSaving;
   String? get saveError => _saveError;
   String? get receiptPhotoPath => _receiptPhotoPath;
@@ -52,6 +54,12 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
     if (_amountText == value) return;
     _amountText = value;
     _saveError = null;
+    notifyListeners();
+  }
+
+  void setCategory(ExpenseCategory value) {
+    if (_category == value) return;
+    _category = value;
     notifyListeners();
   }
 
@@ -96,6 +104,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
         sessionId: sessionId,
         description: _description,
         amount: amount,
+        category: _category,
         receiptPhotoPath: _receiptPhotoPath,
       );
       return saved;

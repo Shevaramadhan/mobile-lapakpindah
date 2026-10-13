@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
+import 'package:lapakpindah/core/utils/format_rupiah.dart';
 import 'package:lapakpindah/core/utils/view_status.dart';
 import 'package:lapakpindah/core/widgets/state_views.dart';
 import 'package:lapakpindah/modules/pengeluaran/models/expense.dart';
@@ -20,18 +22,24 @@ class PengeluaranScreen extends StatefulWidget {
 }
 
 class _PengeluaranScreenState extends State<PengeluaranScreen> {
+  /// 0 = Sesi Aktif, 1 = Riwayat Semua Sesi (FR-10).
+  int _viewIndex = 0;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => context.read<PengeluaranViewModel>().loadData(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final vm = context.read<PengeluaranViewModel>();
+      vm.loadData();
+      vm.loadHistory();
+    });
   }
 
   Future<void> _openAddForm() async {
     final vm = context.read<PengeluaranViewModel>();
     final sessionId = vm.activeSessionId;
     if (sessionId == null) return;
+    final wasLimitReached = vm.isLimitReached;
     final result = await Navigator.of(context).push<Expense>(
       MaterialPageRoute(builder: (_) => ChangeNotifierProvider(
         create: (_) => TambahPengeluaranViewModel(sessionId: sessionId),
@@ -40,6 +48,7 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
     );
     if (!mounted || result == null) return;
     vm.applyNewExpense(result);
+    vm.loadHistory();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -53,6 +62,103 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
         ),
       ),
     );
+    // FR-09: peringatan bila pengeluaran baru membuat total melewati batas.
+    if (!wasLimitReached && vm.isLimitReached) {
+      _showLimitWarningDialog();
+    }
+  }
+
+  /// Dialog peringatan saat batas pengeluaran tercapai/terlampaui (FR-09).
+  void _showLimitWarningDialog() {
+    final vm = context.read<PengeluaranViewModel>();
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded,
+            color: Color(0xFFB91C1C), size: 40),
+        title: const Text('Batas pengeluaran tercapai'),
+        content: Text(
+          'Total pengeluaran sesi ini sudah mencapai '
+          '${formatRupiah(vm.totalExpense)}, melewati batas '
+          '${formatRupiah(vm.limit?.limitAmount ?? 0)}. '
+          'Pertimbangkan untuk menekan biaya berikutnya.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Dialog ubah batas pengeluaran harian (FR-08).
+  Future<void> _editLimit(double currentLimit) async {
+    final vm = context.read<PengeluaranViewModel>();
+    final controller = TextEditingController(
+      text: currentLimit.toStringAsFixed(0),
+    );
+    final formKey = GlobalKey<FormState>();
+
+    final newValue = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Ubah batas pengeluaran'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(
+              labelText: 'Batas harian',
+              prefixText: 'Rp  ',
+            ),
+            validator: (value) {
+              final parsed = double.tryParse((value ?? '').replaceAll('.', ''));
+              if (parsed == null || parsed <= 0) {
+                return 'Batas harus lebih dari Rp 0';
+              }
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(
+                  dialogContext,
+                  double.parse(controller.text.replaceAll('.', '')),
+                );
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+
+    if (newValue == null || !mounted) return;
+    final ok = await vm.setLimit(newValue);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: ok ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+        content: Text(
+          ok
+              ? 'Batas pengeluaran diubah menjadi ${formatRupiah(newValue)}'
+              : 'Gagal mengubah batas pengeluaran.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -61,11 +167,22 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
       appBar: AppBar(automaticallyImplyLeading: false, title: const Text('Pengeluaran')),
       body: Consumer<PengeluaranViewModel>(
         builder: (context, vm, _) {
-          return switch (vm.status) {
-            ViewStatus.loading => const LoadingView(message: 'Memuat pengeluaran...'),
-            ViewStatus.error => ErrorView(message: vm.errorMessage, onRetry: vm.loadData),
-            ViewStatus.success => vm.hasActiveSession ? _buildWithSession(vm) : _buildNoSession(vm),
-          };
+          if (vm.status == ViewStatus.loading) {
+            return const LoadingView(message: 'Memuat pengeluaran...');
+          }
+          if (vm.status == ViewStatus.error) {
+            return ErrorView(message: vm.errorMessage, onRetry: vm.loadData);
+          }
+          return Column(
+            children: [
+              _buildViewSwitcher(),
+              Expanded(
+                child: _viewIndex == 0
+                    ? (vm.hasActiveSession ? _buildWithSession(vm) : _buildNoSession(vm))
+                    : _buildHistory(vm),
+              ),
+            ],
+          );
         },
       ),
       floatingActionButton: Consumer<PengeluaranViewModel>(
@@ -82,21 +199,144 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
     );
   }
 
+  /// Pemilih tampilan: Sesi Aktif vs Riwayat (FR-10).
+  Widget _buildViewSwitcher() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+      child: SegmentedButton<int>(
+        segments: const [
+          ButtonSegment(value: 0, label: Text('Sesi Aktif'), icon: Icon(Icons.play_circle_outline, size: 18)),
+          ButtonSegment(value: 1, label: Text('Riwayat'), icon: Icon(Icons.history, size: 18)),
+        ],
+        selected: {_viewIndex},
+        onSelectionChanged: (s) => setState(() => _viewIndex = s.first),
+        showSelectedIcon: false,
+      ),
+    );
+  }
+
+  // ── Filter kategori (FR-07) ──
+  Widget _buildCategoryFilter(PengeluaranViewModel vm) {
+    final selected = vm.selectedCategory;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          FilterChip(
+            label: const Text('Semua'),
+            selected: selected == null,
+            onSelected: (_) => vm.setCategoryFilter(null),
+          ),
+          for (final cat in ExpenseCategory.values) ...[
+            const SizedBox(width: AppSpacing.sm),
+            FilterChip(
+              label: Text(cat.label),
+              selected: selected == cat,
+              onSelected: (_) => vm.setCategoryFilter(cat),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildWithSession(PengeluaranViewModel vm) {
     final session = vm.activeSession!;
     final limitAmount = vm.limit?.limitAmount ?? 0;
+    final filtered = vm.filteredExpenses;
     return ListView(
       padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 96),
       children: [
         ActiveSessionBar(session: session),
         const SizedBox(height: AppSpacing.md),
-        if (vm.hasLimit) ExpenseLimitCard(totalExpense: vm.totalExpense, limitAmount: limitAmount, remainingLimit: vm.remainingLimit, usagePercent: vm.usagePercent, isLimitReached: vm.isLimitReached),
+        if (vm.hasLimit)
+          ExpenseLimitCard(
+            totalExpense: vm.totalExpense,
+            limitAmount: limitAmount,
+            remainingLimit: vm.remainingLimit,
+            usagePercent: vm.usagePercent,
+            isLimitReached: vm.isLimitReached,
+            onEditLimit: () => _editLimit(limitAmount),
+          ),
         const SizedBox(height: AppSpacing.md),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Daftar pengeluaran', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)), Text('${vm.expenses.length} item', style: Theme.of(context).textTheme.bodySmall)]),
+        _buildCategoryFilter(vm),
         const SizedBox(height: AppSpacing.sm),
-        for (final expense in vm.expenses) ...[ExpenseCard(expense: expense), const SizedBox(height: AppSpacing.sm)],
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Daftar pengeluaran', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+            Text('${filtered.length} item', style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (filtered.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+            child: Center(
+              child: Text(
+                'Tidak ada pengeluaran untuk kategori ini.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              ),
+            ),
+          )
+        else
+          for (final expense in filtered) ...[ExpenseCard(expense: expense), const SizedBox(height: AppSpacing.sm)],
       ],
     );
+  }
+
+  // ── Riwayat seluruh sesi (FR-10) ──
+  Widget _buildHistory(PengeluaranViewModel vm) {
+    final textTheme = Theme.of(context).textTheme;
+    if (vm.historyStatus == ViewStatus.loading) {
+      return const LoadingView(message: 'Memuat riwayat...');
+    }
+    if (vm.historyStatus == ViewStatus.error) {
+      return ErrorView(message: vm.errorMessage, onRetry: vm.loadHistory);
+    }
+    if (vm.historyGroups.isEmpty) {
+      return Center(
+        child: Text('Belum ada riwayat pengeluaran.', style: textTheme.bodySmall),
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 96),
+      children: [
+        for (final group in vm.historyGroups) ...[
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(group.session.locationName, style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                      const SizedBox(height: 2),
+                      Text(_formatDate(group.session.openTime), style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
+                    ],
+                  ),
+                ),
+                Text(formatRupiah(group.total), style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (final expense in group.expenses) ...[ExpenseCard(expense: expense), const SizedBox(height: AppSpacing.sm)],
+          const SizedBox(height: AppSpacing.md),
+        ],
+      ],
+    );
+  }
+
+  static String _formatDate(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year} • ${dt.hour.toString().padLeft(2, '0')}.${dt.minute.toString().padLeft(2, '0')} WIB';
   }
 
   Widget _buildNoSession(PengeluaranViewModel vm) {
