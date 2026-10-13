@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/core/utils/validators.dart';
 import 'package:lapakpindah/core/widgets/custom_button.dart';
 import 'package:lapakpindah/core/widgets/custom_text_field.dart';
@@ -94,16 +92,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Latar putih (colorScheme.surface) sesuai desain login
+    final surface = Theme.of(context).colorScheme.surface;
+
     // Sedang mengecek akun yang diingat → tampilkan indikator loading
     if (_isCheckingSession) {
-      return const Scaffold(
-        backgroundColor: AppColors.surfaceCard,
-        body: LoadingView(message: 'Membuka LapakPindah...'),
+      return Scaffold(
+        backgroundColor: surface,
+        body: const LoadingView(message: 'Membuka LapakPindah...'),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceCard,
+      backgroundColor: surface,
       body: SafeArea(
         // M3 Layout: SingleChildScrollView agar tidak overflow saat keyboard muncul
         child: SingleChildScrollView(
@@ -132,20 +133,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ── Bagian 1: logo + nama aplikasi + tagline ──
   Widget _buildTopHeader() {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
         Container(
           width: AppSpacing.logoSize,
           height: AppSpacing.logoSize,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: colorScheme.primary,
             borderRadius: BorderRadius.circular(AppSpacing.borderRadiusCard),
           ),
-          child: const Icon(
-            Icons.storefront,
-            color: AppColors.onPrimary,
-            size: 20,
-          ),
+          child: Icon(Icons.storefront, color: colorScheme.onPrimary, size: 20),
         ),
         const SizedBox(width: AppSpacing.sm),
         // Flexible: teks menyusut/terpotong di layar sempit, tidak overflow
@@ -155,12 +155,12 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Text(
                 'LapakPindah',
-                style: AppTextStyles.titleLarge(),
+                style: textTheme.titleMedium,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 'Cari lokasi paling untung',
-                style: AppTextStyles.labelSmall(),
+                style: textTheme.labelSmall,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -172,6 +172,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ── Bagian 2: judul, input, checkbox, tombol ──
   Widget _buildLoginForm() {
+    final textTheme = Theme.of(context).textTheme;
+
     return Consumer<AuthViewModel>(
       builder: (context, viewModel, _) {
         final isLoading = viewModel.isLoading;
@@ -180,11 +182,11 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Judul
-            Text('Masuk ke Akun', style: AppTextStyles.heading1()),
+            Text('Masuk ke Akun', style: textTheme.headlineSmall),
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Catat jualan dan biaya di tiap lokasi',
-              style: AppTextStyles.bodyMedium(),
+              style: textTheme.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.lg),
 
@@ -225,11 +227,11 @@ class _LoginScreenState extends State<LoginScreen> {
               suffixIcon: IconButton(
                 tooltip: _obscurePin ? 'Tampilkan PIN' : 'Sembunyikan PIN',
                 onPressed: () => setState(() => _obscurePin = !_obscurePin),
+                // Warna ikon dari inputDecorationTheme (suffixIconColor)
                 icon: Icon(
                   _obscurePin
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: AppColors.inputIcon,
                   size: 20,
                 ),
               ),
@@ -241,7 +243,9 @@ class _LoginScreenState extends State<LoginScreen> {
             InkWell(
               onTap: isLoading
                   ? null
-                  : () => viewModel.toggleRememberDevice(!viewModel.rememberDevice),
+                  : () => viewModel.toggleRememberDevice(
+                      !viewModel.rememberDevice,
+                    ),
               borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 48),
@@ -251,14 +255,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       value: viewModel.rememberDevice,
                       onChanged: isLoading
                           ? null
-                          : (value) => viewModel.toggleRememberDevice(value ?? false),
-                      activeColor: AppColors.primaryDark,
-                      side: const BorderSide(color: AppColors.inputBorder),
+                          : (value) =>
+                                viewModel.toggleRememberDevice(value ?? false),
+                      // Warna kotak centang dari checkboxTheme
                     ),
                     Expanded(
                       child: Text(
                         'Ingat akun ini di perangkat ini',
-                        style: AppTextStyles.bodySmall(),
+                        style: textTheme.bodySmall,
                       ),
                     ),
                   ],
@@ -289,7 +293,10 @@ class _LoginScreenState extends State<LoginScreen> {
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text('Belum punya akun? ', style: AppTextStyles.bodyMedium()),
+          Text(
+            'Belum punya akun? ',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           TextButton(
             // M4: named route, terdaftar di AppRoutes
             onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
@@ -297,10 +304,8 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
               minimumSize: const Size(48, 48),
             ),
-            child: Text(
-              'Buat akun',
-              style: AppTextStyles.labelMedium(color: AppColors.primaryDark),
-            ),
+            // Warna & gaya teks dari textButtonTheme
+            child: const Text('Buat akun'),
           ),
         ],
       ),

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 
-/// Tombol utama LapakPindah — bg primary (#B15F00).
+/// Tombol utama LapakPindah: lebar penuh, tinggi 56.
+/// Warna, sudut, dan gaya teks diambil dari filledButtonTheme (app_theme.dart).
 class LapakPrimaryButton extends StatelessWidget {
   const LapakPrimaryButton({
     super.key,
@@ -20,54 +19,42 @@ class LapakPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: AppSpacing.buttonHeight,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        border: Border.all(color: AppColors.primaryDark),
-        borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadow,
-            offset: Offset(0, 4),
-            blurRadius: 4,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-          child: Center(
-            child: isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.onPrimary,
-                    ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (icon != null) ...[
-                        Icon(icon, color: AppColors.onPrimary, size: 15),
-                        const SizedBox(width: AppSpacing.sm),
-                      ],
-                      Text(label, style: AppTextStyles.buttonText()),
-                    ],
+      // AbsorbPointer: saat loading tombol tidak bisa ditekan,
+      // tetapi warnanya tetap oranye (tidak berubah jadi abu "disabled").
+      child: AbsorbPointer(
+        absorbing: isLoading,
+        child: FilledButton(
+          onPressed: onPressed,
+          child: isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
-          ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 18),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
+                    Text(label),
+                  ],
+                ),
         ),
       ),
     );
   }
 }
 
-/// Tombol sekunder LapakPindah — bg putih, border #DBC2B0.
+/// Tombol sekunder LapakPindah: lebar penuh, latar putih bergaris.
+/// Gaya diambil dari outlinedButtonTheme (app_theme.dart).
 class LapakSecondaryButton extends StatelessWidget {
   const LapakSecondaryButton({
     super.key,
@@ -82,41 +69,20 @@ class LapakSecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: AppSpacing.buttonHeight,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        border: Border.all(color: AppColors.inputBorder),
-        borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadow,
-            offset: Offset(0, 4),
-            blurRadius: 4,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, color: AppColors.textSecondary, size: 15),
-                  const SizedBox(width: AppSpacing.sm),
-                ],
-                Text(
-                  label,
-                  style: AppTextStyles.buttonText(color: AppColors.textPrimary),
-                ),
-              ],
-            ),
-          ),
+      child: OutlinedButton(
+        onPressed: onPressed,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 18),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+            Text(label),
+          ],
         ),
       ),
     );

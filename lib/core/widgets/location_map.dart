@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
 
 /// Peta sebuah lokasi memakai OpenStreetMap (gratis, tanpa API key).
 ///
@@ -45,6 +44,9 @@ class _LocationMapState extends State<LocationMap> {
 
   @override
   Widget build(BuildContext context) {
+    // Warna diambil dari tema (app_theme.dart)
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Stack(
       children: [
         // ── Peta ──
@@ -69,8 +71,8 @@ class _LocationMapState extends State<LocationMap> {
                   point: _lapakPoint,
                   radius: 60,
                   useRadiusInMeter: true,
-                  color: AppColors.primary.withValues(alpha: 0.2),
-                  borderColor: AppColors.primary.withValues(alpha: 0.4),
+                  color: colorScheme.primary.withValues(alpha: 0.2),
+                  borderColor: colorScheme.primary.withValues(alpha: 0.4),
                   borderStrokeWidth: 1,
                 ),
               ],
@@ -84,9 +86,9 @@ class _LocationMapState extends State<LocationMap> {
                   width: 40,
                   height: 40,
                   alignment: Alignment.topCenter,
-                  child: const Icon(
+                  child: Icon(
                     Icons.location_on,
-                    color: AppColors.primary,
+                    color: colorScheme.primary,
                     size: 40,
                   ),
                 ),
@@ -99,13 +101,14 @@ class _LocationMapState extends State<LocationMap> {
             Align(
               alignment: Alignment.bottomRight,
               child: Container(
-                color: AppColors.surfaceCard.withValues(alpha: 0.8),
+                color: colorScheme.surface.withValues(alpha: 0.8),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: const Text(
+                child: Text(
                   '© OpenStreetMap contributors',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(fontSize: 10),
                 ),
               ),
             ),
@@ -117,14 +120,17 @@ class _LocationMapState extends State<LocationMap> {
           top: 8,
           right: 8,
           child: Material(
-            color: AppColors.surfaceCard,
-            shape: const CircleBorder(
-              side: BorderSide(color: AppColors.inputBorder),
+            color: colorScheme.surface,
+            shape: CircleBorder(
+              side: BorderSide(color: colorScheme.outlineVariant),
             ),
             child: IconButton(
               tooltip: 'Kembali ke titik lapak',
               onPressed: _recenter,
-              icon: const Icon(Icons.my_location, color: AppColors.textSecondary),
+              icon: Icon(
+                Icons.my_location,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ),

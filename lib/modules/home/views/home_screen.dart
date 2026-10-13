@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 import 'package:lapakpindah/core/utils/view_status.dart';
 import 'package:lapakpindah/core/widgets/state_views.dart';
 import 'package:lapakpindah/modules/auth/view_models/auth_view_model.dart';
@@ -41,9 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadDashboard() {
-    return context
-        .read<HomeViewModel>()
-        .loadDashboard(simulateError: _simulateError);
+    return context.read<HomeViewModel>().loadDashboard(
+      simulateError: _simulateError,
+    );
   }
 
   // ── Aksi: menu profil ──
@@ -121,17 +119,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Warna latar layar dari tema (scaffoldBackgroundColor)
     return Scaffold(
-      backgroundColor: AppColors.surfaceBackground,
       appBar: _buildAppBar(),
       body: Consumer<HomeViewModel>(
         builder: (context, vm, _) {
           // Pilih tampilan sesuai status: loading / error / success
           return switch (vm.status) {
-            ViewStatus.loading =>
-              const LoadingView(message: 'Memuat beranda...'),
-            ViewStatus.error =>
-              ErrorView(message: vm.errorMessage, onRetry: _loadDashboard),
+            ViewStatus.loading => const LoadingView(
+              message: 'Memuat beranda...',
+            ),
+            ViewStatus.error => ErrorView(
+              message: vm.errorMessage,
+              onRetry: _loadDashboard,
+            ),
             ViewStatus.success => _buildContent(vm.summary),
           };
         },
@@ -140,16 +141,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── AppBar: logo + nama aplikasi + tombol profil ──
+  // Warna, tinggi, gaya judul, dan garis bawah dari appBarTheme.
   PreferredSizeWidget _buildAppBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return AppBar(
-      backgroundColor: AppColors.surfaceCard,
       automaticallyImplyLeading: false,
       titleSpacing: AppSpacing.lg,
       title: Row(
         children: [
-          const Icon(Icons.storefront, color: AppColors.primaryDark, size: 22),
+          Icon(
+            Icons.storefront,
+            color: colorScheme.onPrimaryContainer,
+            size: 22,
+          ),
           const SizedBox(width: AppSpacing.sm),
-          Text('LapakPindah', style: AppTextStyles.titleLarge()),
+          const Text('LapakPindah'),
         ],
       ),
       actions: [
@@ -171,22 +178,18 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.surfaceChip,
+                color: colorScheme.surfaceContainer,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.inputBorder),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.person_outline,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ),
         ),
       ],
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(height: 1, thickness: 1, color: AppColors.inputBorder),
-      ),
     );
   }
 

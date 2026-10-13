@@ -65,4 +65,16 @@ class Validators {
     }
     return null;
   }
+
+  /// Maksimal [max] karakter. Kosong dianggap valid (untuk isian opsional).
+  static String? maxLength(
+    String? value,
+    int max, {
+    String fieldName = 'Field ini',
+  }) {
+    if (value != null && value.trim().length > max) {
+      return '$fieldName maksimal $max karakter';
+    }
+    return null;
+  }
 }

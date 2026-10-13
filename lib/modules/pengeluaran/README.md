@@ -61,3 +61,7 @@ Nama file di atas hanya usulan; silakan disesuaikan pemilik modul, asalkan tetap
 5. **Pakai ulang dari `core/`:** `LapakTextField`, `LapakPrimaryButton`, `state_views.dart`
    (LoadingView/ErrorView/EmptyView), `validators.dart`, `format_rupiah.dart`, `location_map.dart`.
 6. File `.gitkeep` hanya penanda folder kosong untuk Git; boleh dihapus setelah folder berisi file Dart.
+7. **Gaya tampilan dari tema:** baca gaya lewat `Theme.of(context).textTheme` dan `.colorScheme`
+   (semua diatur sekali di `core/theme/app_theme.dart`, nilainya dari Figma). Jangan menulis
+   `TextStyle(fontSize: ...)` atau kode warna hex langsung di widget. Warna yang tidak punya peran
+   di ColorScheme (`AppColors.success`, `successContainer`, `warningContainer`) boleh dari `AppColors`.

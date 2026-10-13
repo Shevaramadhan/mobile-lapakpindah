@@ -16,6 +16,6 @@ class AppSpacing {
   // Component Sizes
   static const double buttonHeight = 56;
   static const double inputHeight = 50;
-  static const double navBarHeight = 50;
+  static const double navBarHeight = 64;
   static const double logoSize = 36;
 }

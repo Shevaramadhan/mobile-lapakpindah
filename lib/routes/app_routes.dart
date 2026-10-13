@@ -3,6 +3,7 @@ import 'package:lapakpindah/core/widgets/not_found_screen.dart';
 import 'package:lapakpindah/modules/auth/views/login_screen.dart';
 import 'package:lapakpindah/modules/auth/views/register_placeholder_screen.dart';
 import 'package:lapakpindah/modules/home/views/main_navigation_screen.dart';
+import 'package:lapakpindah/modules/sesi_lokasi/views/location_form_screen.dart';
 
 /// Satu tempat untuk seluruh route aplikasi (M4: Named Routes).
 ///
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String home = '/home';
+  static const String locationForm = '/lokasi/tambah'; // Modul 1
 
   // ── 2. Daftar route: nama → layar ──
   // Jika sebuah layar butuh data, kirim lewat `arguments` lalu baca di
@@ -28,6 +30,7 @@ class AppRoutes {
     login: (context) => const LoginScreen(),
     register: (context) => const RegisterPlaceholderScreen(),
     home: (context) => const MainNavigationScreen(), // Beranda + 5 tab
+    locationForm: (context) => const LocationFormScreen(), // form tambah lokasi
   };
 
   // ── 3. Halaman cadangan jika nama route tidak terdaftar ──

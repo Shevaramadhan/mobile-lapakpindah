@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lapakpindah/core/theme/app_colors.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
-import 'package:lapakpindah/core/theme/app_text_styles.dart';
 
 /// Bagian atas Beranda: sapaan + status lapak (buka/tutup) + chip sesi.
 class GreetingHeader extends StatelessWidget {
@@ -16,6 +15,10 @@ class GreetingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Gaya teks & warna dari tema (app_theme.dart)
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -24,11 +27,11 @@ class GreetingHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Halo, $userName', style: AppTextStyles.bodySmall()),
+              Text('Halo, $userName', style: textTheme.bodySmall),
               const SizedBox(height: 2),
               Text(
                 isSessionActive ? 'Lapak sedang buka' : 'Lapak sedang tutup',
-                style: AppTextStyles.heading2(),
+                style: textTheme.titleLarge,
               ),
             ],
           ),
@@ -41,8 +44,8 @@ class GreetingHeader extends StatelessWidget {
             vertical: AppSpacing.xs,
           ),
           decoration: BoxDecoration(
-            color: AppColors.surfaceChip,
-            border: Border.all(color: AppColors.inputBorder),
+            color: colorScheme.surfaceContainer,
+            border: Border.all(color: colorScheme.outlineVariant),
             borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
           ),
           child: Row(
@@ -51,14 +54,15 @@ class GreetingHeader extends StatelessWidget {
               Icon(
                 Icons.circle,
                 size: 8,
+                // Hijau "success" tidak ada di ColorScheme → dari AppColors
                 color: isSessionActive
                     ? AppColors.success
-                    : AppColors.textSecondary,
+                    : colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 isSessionActive ? 'Sesi aktif' : 'Tidak ada sesi',
-                style: AppTextStyles.labelMedium(),
+                style: textTheme.labelLarge,
               ),
             ],
           ),
