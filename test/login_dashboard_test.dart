@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:lapakpindah/data/auth_repository.dart';
+import 'package:lapakpindah/core/utils/validators.dart';
 import 'package:lapakpindah/main.dart';
-import 'package:lapakpindah/utils/validators.dart';
+import 'package:lapakpindah/modules/auth/repositories/auth_repository.dart';
 
 void main() {
   // ── Validator login ──
