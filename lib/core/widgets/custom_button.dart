@@ -9,12 +9,14 @@ class LapakPrimaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.iconWidget,
     this.isLoading = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+  final Widget? iconWidget;
   final bool isLoading;
 
   @override
@@ -40,11 +42,11 @@ class LapakPrimaryButton extends StatelessWidget {
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 18),
+                    if (icon != null || iconWidget != null) ...[
+                      iconWidget ?? Icon(icon, size: 18),
                       const SizedBox(width: AppSpacing.sm),
                     ],
-                    Text(label),
+                    Flexible(child: Text(label, textAlign: TextAlign.center)),
                   ],
                 ),
         ),
@@ -61,11 +63,13 @@ class LapakSecondaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.iconWidget,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+  final Widget? iconWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +81,11 @@ class LapakSecondaryButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[
-              Icon(icon, size: 18),
+            if (icon != null || iconWidget != null) ...[
+              iconWidget ?? Icon(icon, size: 18),
               const SizedBox(width: AppSpacing.sm),
             ],
-            Text(label),
+            Flexible(child: Text(label, textAlign: TextAlign.center)),
           ],
         ),
       ),

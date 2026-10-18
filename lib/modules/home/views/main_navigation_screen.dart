@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/modules/home/views/home_screen.dart';
 import 'package:lapakpindah/modules/sesi_lokasi/views/location_list_screen.dart';
+import 'package:lapakpindah/modules/evaluasi_lokasi/views/evaluation_screen.dart';
 
 /// Screen utama setelah login: bottom navigation 5 tab.
 ///
 /// Tab 0 = Beranda (dashboard). Tab 1 = Lokasi (Modul 1).
-/// Tab 2–4 = modul anggota lain, sementara berisi placeholder.
+/// Tab 2–3 sementara berisi placeholder. Tab 4 = Evaluasi (FR-17/FR-18).
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -49,11 +50,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             module: 'Modul 3',
             icon: Icons.shopping_bag_outlined,
           ),
-          const _PlaceholderTab(
-            title: 'Evaluasi Lokasi',
-            module: 'Modul 4',
-            icon: Icons.bar_chart,
-          ),
+          EvaluationScreen(isActive: _currentIndex == 4),
         ],
       ),
       bottomNavigationBar: _buildBottomNavBar(),

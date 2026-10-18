@@ -11,13 +11,13 @@ class LocationException implements Exception {
 
 /// Data layer lokasi (M3: lapisan Data pada MVVM).
 ///
-/// SEMENTARA: data disimpan di MEMORI (sebuah List), belum di database.
-/// Daftar dimulai kosong dan akan kosong lagi setiap aplikasi dijalankan ulang.
-/// Nanti cukup isi kelas ini yang diganti ke SQLite; ViewModel & UI tidak berubah.
+/// Penyimpanan sementara selama aplikasi berjalan.
 class LocationRepository {
+  LocationRepository({List<Location> initialLocations = const []})
+    : _locations = List.of(initialLocations);
   // ── Penyimpanan di memori ──
   // Bukan `static`: list ikut hilang saat aplikasi ditutup.
-  final List<Location> _locations = [];
+  final List<Location> _locations;
 
   // ── Read ──
 
@@ -41,6 +41,9 @@ class LocationRepository {
   /// Melempar [LocationException] jika nama sudah dipakai.
   Future<Location> add({required String name, String? note}) async {
     await Future.delayed(const Duration(milliseconds: 600));
+    if (name.trim().isEmpty) {
+      throw const LocationException('Nama tempat wajib diisi');
+    }
 
     // Aturan data: nama lokasi harus unik (pengaman kedua setelah validasi form).
     if (isNameTaken(name)) {
