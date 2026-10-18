@@ -53,7 +53,7 @@ class NotificationService {
     const androidDetails = AndroidNotificationDetails(
       'expense_limit_channel',
       'Peringatan Batas Pengeluaran',
-      channelDescription: 'Notifikasi saat pengeluaran mencapai batas harian',
+      channelDescription: 'Notifikasi saat pengeluaran mencapai batas anggaran sesi',
       importance: Importance.high,
       priority: Priority.high,
       ticker: 'Peringatan Batas Pengeluaran',

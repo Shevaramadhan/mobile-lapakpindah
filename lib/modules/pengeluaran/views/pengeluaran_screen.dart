@@ -327,7 +327,7 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
     vm.loadHistory();
   }
 
-  /// Dialog ubah batas pengeluaran harian (FR-08).
+  /// Dialog ubah batas pengeluaran sesi (FR-09).
   Future<void> _editLimit(double currentLimit) async {
     final vm = context.read<PengeluaranViewModel>();
     final controller = TextEditingController(
@@ -347,7 +347,7 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
             autofocus: true,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: const InputDecoration(
-              labelText: 'Batas harian',
+              labelText: 'Batas anggaran sesi',
               prefixText: 'Rp  ',
             ),
             validator: (value) {
