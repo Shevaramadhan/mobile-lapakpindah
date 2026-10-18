@@ -261,7 +261,7 @@ class ExpenseDetailSheet extends StatelessWidget {
                       file,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                      errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
                     ),
                     Container(
                       margin: const EdgeInsets.all(8),

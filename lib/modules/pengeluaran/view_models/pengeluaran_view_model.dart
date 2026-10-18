@@ -125,6 +125,12 @@ class PengeluaranViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Mengatur sesi aktif baru dan otomatis mengaplikasikan biaya tetap lokasi (FR-08).
+  Future<void> setActiveSession(SessionInfo? session, {bool autoApplyFixedCosts = true}) async {
+    await _repository.setActiveSession(session, autoApplyFixedCosts: autoApplyFixedCosts);
+    await loadData();
+  }
+
   // ── Setelah form berhasil menyimpan (Frame 10) ──
 
   // ═══ [RESULT] Item baru langsung diselipkan ke daftar tanpa reload ═══

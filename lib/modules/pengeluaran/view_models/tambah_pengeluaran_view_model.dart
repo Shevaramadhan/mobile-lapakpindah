@@ -138,11 +138,15 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ═══ [PARSING] Konversi teks "20.000" → angka 20000 ═══
-  /// "20.000" / "20000" / "Rp 20.000" → 20000.
+  // ═══ [PARSING] Konversi teks "20.000" / "20.000,50" → angka 20000 ═══
+  /// "20.000" / "20000" / "Rp 20.000" / "20.000,50" → 20000.
   static double _parseAmount(String raw) {
-    final trimmed = raw.trim();
+    var trimmed = raw.trim();
     if (trimmed.startsWith('-')) return 0;
+    // Potong bagian desimal (sen) jika pengguna mengetik pemisah koma
+    if (trimmed.contains(',')) {
+      trimmed = trimmed.split(',').first;
+    }
     final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isEmpty) return 0;
     return double.tryParse(digits) ?? 0;

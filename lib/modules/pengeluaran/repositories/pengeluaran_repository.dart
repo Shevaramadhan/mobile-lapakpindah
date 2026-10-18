@@ -275,6 +275,9 @@ class PengeluaranRepository {
   // Sesi yang sudah memicu notifikasi batas tercapai (cegah spam, FR-10)
   final Set<String> _notifiedSessions = {};
 
+  /// Cek apakah sesi tertentu sudah memicu notifikasi limit (FR-10).
+  bool isSessionNotified(String sessionId) => _notifiedSessions.contains(sessionId);
+
   // ── Read Sesi ──
 
   /// Mendapatkan sesi jualan aktif saat ini (bisa null jika belum ada sesi).
@@ -284,8 +287,16 @@ class PengeluaranRepository {
   }
 
   /// Atur sesi aktif (untuk demo berganti antara ada sesi vs tanpa sesi).
-  void setActiveSession(SessionInfo? session) {
+  /// Mendukung auto-apply biaya tetap lokasi ke sesi baru (FR-08).
+  Future<List<Expense>> setActiveSession(SessionInfo? session, {bool autoApplyFixedCosts = false}) async {
     _activeSession = session;
+    if (session != null && autoApplyFixedCosts && session.locationId.isNotEmpty) {
+      return await applyLocationFixedCostsToSession(
+        sessionId: session.id,
+        locationId: session.locationId,
+      );
+    }
+    return [];
   }
 
   // ── Read Batas Pengeluaran ──

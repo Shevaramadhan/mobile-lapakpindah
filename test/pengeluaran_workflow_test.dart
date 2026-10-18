@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lapakpindah/main.dart';
 import 'package:lapakpindah/modules/pengeluaran/models/expense.dart';
+import 'package:lapakpindah/modules/pengeluaran/models/session_info.dart';
 import 'package:lapakpindah/modules/pengeluaran/repositories/pengeluaran_repository.dart';
 import 'package:lapakpindah/modules/pengeluaran/view_models/pengeluaran_view_model.dart';
 import 'package:lapakpindah/modules/pengeluaran/view_models/tambah_pengeluaran_view_model.dart';
@@ -41,6 +42,17 @@ void main() {
       expect(vm.validateAmount('-5000'), 'Jumlah biaya tidak boleh negatif');
       expect(vm.validateAmount('0'), 'Jumlah harus lebih dari Rp 0');
       expect(vm.validateAmount('25000'), isNull);
+    });
+
+    test("parsing nominal: '20.000' dan '20.000,50' terurai benar menjadi 20000", () {
+      final vm = TambahPengeluaranViewModel(sessionId: 'test-session');
+      vm.setAmountText('20.000');
+      expect(vm.amount, 20000);
+      expect(vm.validateAmount('20.000'), isNull);
+
+      vm.setAmountText('20.000,50');
+      expect(vm.amount, 20000);
+      expect(vm.validateAmount('20.000,50'), isNull);
     });
 
     test('save() berhasil mengembalikan objek Expense', () async {
@@ -114,6 +126,73 @@ void main() {
       expect(vm.remainingLimit, 0);
       expect(vm.usagePercent, 100);
       expect(vm.isLimitReached, isTrue);
+    });
+  });
+
+  group('PengeluaranRepository & Notifikasi (FR-08, FR-09, FR-10)', () {
+    test('FR-08 auto-apply fixed costs saat sesi baru diaktifkan', () async {
+      final repo = PengeluaranRepository();
+      final newSession = SessionInfo(
+        id: 'new-session-99',
+        locationId: 'loc-cfd',
+        locationName: 'CFD Jam Gadang',
+        openTime: DateTime.now(),
+        plannedCloseTime: DateTime.now().add(const Duration(hours: 4)),
+      );
+
+      final addedCosts = await repo.setActiveSession(newSession, autoApplyFixedCosts: true);
+      // Di loc-cfd ada 2 template biaya tetap: Retribusi (10.000) dan Sewa tempat (50.000)
+      expect(addedCosts.length, 2);
+      expect(addedCosts.any((e) => e.description == 'Retribusi' && e.amount == 10000), isTrue);
+      expect(addedCosts.any((e) => e.description == 'Sewa tempat' && e.amount == 50000), isTrue);
+
+      final sessionExpenses = await repo.fetchExpensesBySession('new-session-99');
+      expect(sessionExpenses.length, 2);
+    });
+
+    test('FR-10 notifikasi hanya dipicu 1x per sesi (flag _notifiedSessions)', () async {
+      final repo = PengeluaranRepository();
+      // session-cfd-01 awal total: 160.000, limit: 200.000
+      expect(repo.isSessionNotified('session-cfd-01'), isFalse);
+
+      // Tambah biaya 50.000 -> total 210.000 (melebihi limit)
+      await repo.addExpense(
+        sessionId: 'session-cfd-01',
+        description: 'Beli Daging',
+        amount: 50000,
+      );
+      expect(repo.isSessionNotified('session-cfd-01'), isTrue);
+
+      // Tambah biaya lagi 30.000 -> flag tetap true dan tidak crash/spam
+      await repo.addExpense(
+        sessionId: 'session-cfd-01',
+        description: 'Beli Bumbu',
+        amount: 30000,
+      );
+      expect(repo.isSessionNotified('session-cfd-01'), isTrue);
+    });
+
+    test('updateExpense dan setLimit memicu pengecekan batas dan notifikasi', () async {
+      final repo = PengeluaranRepository();
+      // session-cfd-01 limit awal: 200.000, total: 160.000
+      expect(repo.isSessionNotified('session-cfd-01'), isFalse);
+
+      // Turunkan limit menjadi 150.000 (di bawah total 160.000)
+      await repo.setLimit(sessionId: 'session-cfd-01', limitAmount: 150000);
+      expect(repo.isSessionNotified('session-cfd-01'), isTrue);
+
+      // Reset repo untuk tes updateExpense
+      repo.resetForTesting();
+      expect(repo.isSessionNotified('session-cfd-01'), isFalse);
+
+      // Update exp-01 (Gas LPG dari 40.000 menjadi 90.000 -> total jadi 210.000)
+      await repo.updateExpense(
+        id: 'exp-01',
+        description: 'Gas LPG 12kg',
+        amount: 90000,
+        category: ExpenseCategory.operasional,
+      );
+      expect(repo.isSessionNotified('session-cfd-01'), isTrue);
     });
   });
 
