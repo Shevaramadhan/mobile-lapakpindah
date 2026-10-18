@@ -87,6 +87,9 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
     if (value == null || value.trim().isEmpty) {
       return 'Jumlah biaya wajib diisi';
     }
+    if (value.trim().startsWith('-')) {
+      return 'Jumlah biaya tidak boleh negatif';
+    }
     final parsed = _parseAmount(value);
     if (parsed <= 0) {
       return 'Jumlah harus lebih dari Rp 0';
@@ -100,6 +103,9 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
   /// Menyimpan pengeluaran. Mengembalikan objek [Expense] jika berhasil,
   /// atau null jika gagal (pesan tersedia di [saveError]).
   Future<Expense?> save() async {
+    // ── Guard re-entry pencegah race condition / double-tap ──
+    if (_isSaving) return null;
+
     _isSaving = true;
     _saveError = null;
     notifyListeners();
@@ -135,7 +141,9 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
   // ═══ [PARSING] Konversi teks "20.000" → angka 20000 ═══
   /// "20.000" / "20000" / "Rp 20.000" → 20000.
   static double _parseAmount(String raw) {
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    final trimmed = raw.trim();
+    if (trimmed.startsWith('-')) return 0;
+    final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isEmpty) return 0;
     return double.tryParse(digits) ?? 0;
   }

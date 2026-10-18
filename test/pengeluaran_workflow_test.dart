@@ -3,11 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lapakpindah/main.dart';
 import 'package:lapakpindah/modules/pengeluaran/models/expense.dart';
+import 'package:lapakpindah/modules/pengeluaran/repositories/pengeluaran_repository.dart';
 import 'package:lapakpindah/modules/pengeluaran/view_models/pengeluaran_view_model.dart';
 import 'package:lapakpindah/modules/pengeluaran/view_models/tambah_pengeluaran_view_model.dart';
 import 'package:lapakpindah/modules/pengeluaran/views/tambah_pengeluaran_screen.dart';
 
 void main() {
+  setUp(() {
+    PengeluaranRepository().resetForTesting();
+  });
+
   group('TambahPengeluaranViewModel (Form State & Validation)', () {
     test('canSave hanya true jika keterangan & jumlah terisi valid', () {
       final vm = TambahPengeluaranViewModel(sessionId: 'test-session');
@@ -30,9 +35,10 @@ void main() {
       expect(vm.validateDescription('Beli es batu'), isNull);
     });
 
-    test('validasi jumlah: kosong atau 0 ditolak', () {
+    test('validasi jumlah: kosong, negatif, atau 0 ditolak', () {
       final vm = TambahPengeluaranViewModel(sessionId: 'test-session');
       expect(vm.validateAmount(''), 'Jumlah biaya wajib diisi');
+      expect(vm.validateAmount('-5000'), 'Jumlah biaya tidak boleh negatif');
       expect(vm.validateAmount('0'), 'Jumlah harus lebih dari Rp 0');
       expect(vm.validateAmount('25000'), isNull);
     });
@@ -47,6 +53,37 @@ void main() {
       expect(saved?.description, 'Beli sendok plastik');
       expect(saved?.amount, 15000);
       expect(saved?.sessionId, 'test-session');
+    });
+
+    test('save() mencegah double call / race condition via re-entry guard', () async {
+      final vm = TambahPengeluaranViewModel(sessionId: 'test-session');
+      vm.setDescription('Beli sendok plastik');
+      vm.setAmountText('15000');
+
+      // Panggil save dua kali secara bersamaan (simulasi double-tap)
+      final future1 = vm.save();
+      final future2 = vm.save();
+      final results = await Future.wait([future1, future2]);
+
+      expect(results[0], isNotNull);
+      expect(results[1], isNull); // Panggilan kedua harus diblokir oleh guard
+    });
+
+    test('PengeluaranRepository adalah singleton dan tersinkronisasi antar ViewModel', () async {
+      final repo1 = PengeluaranRepository();
+      final repo2 = PengeluaranRepository();
+      expect(identical(repo1, repo2), isTrue);
+
+      final formVm = TambahPengeluaranViewModel(sessionId: 'session-cfd-01');
+      formVm.setDescription('Bumbu Dapur Tambahan');
+      formVm.setAmountText('12000');
+      final saved = await formVm.save();
+      expect(saved, isNotNull);
+
+      final listVm = PengeluaranViewModel();
+      await listVm.loadData();
+      final existsInList = listVm.expenses.any((e) => e.description == 'Bumbu Dapur Tambahan');
+      expect(existsInList, isTrue);
     });
   });
 

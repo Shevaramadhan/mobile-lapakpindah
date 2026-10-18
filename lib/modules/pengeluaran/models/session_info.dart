@@ -5,12 +5,14 @@
 /// untuk tampil di kartu sesi aktif (Frame 1 Figma).
 class SessionInfo {
   final String id;
+  final String locationId;
   final String locationName;
   final DateTime openTime;
   final DateTime plannedCloseTime;
 
   const SessionInfo({
     required this.id,
+    this.locationId = '',
     required this.locationName,
     required this.openTime,
     required this.plannedCloseTime,
@@ -20,6 +22,7 @@ class SessionInfo {
   factory SessionInfo.fromMap(Map<String, dynamic> map) {
     return SessionInfo(
       id: map['id'] as String,
+      locationId: (map['location_id'] as String?) ?? '',
       locationName: map['location_name'] as String,
       openTime: DateTime.parse(map['open_time'] as String),
       plannedCloseTime: DateTime.parse(map['planned_close_time'] as String),

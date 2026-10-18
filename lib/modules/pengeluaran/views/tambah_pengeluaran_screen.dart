@@ -234,8 +234,23 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
                   const Icon(Icons.check_circle, size: 28, color: Color(0xFF16A34A)),
                   const SizedBox(height: 8),
                   Text('Foto nota terpasang', style: textTheme.labelLarge),
-                  const SizedBox(height: 2),
-                  Text('Tekan untuk ganti foto', style: textTheme.bodySmall),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton.icon(
+                        icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                        label: const Text('Ganti foto', style: TextStyle(fontSize: 12)),
+                        onPressed: vm.isSaving ? null : () => _pickReceiptPhoto(vm),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        icon: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFB91C1C)),
+                        label: const Text('Hapus foto', style: TextStyle(fontSize: 12, color: Color(0xFFB91C1C))),
+                        onPressed: vm.isSaving ? null : () => vm.setReceiptPhotoPath(null),
+                      ),
+                    ],
+                  ),
                 ],
               )
             : Column(

@@ -31,10 +31,10 @@ class ExpenseLimitCard extends StatelessWidget {
     final percentInt = usagePercent.toInt();
 
     final accentColor = isOverOrReached
-        ? const Color(0xFFB91C1C)
+        ? colorScheme.error
         : colorScheme.primary;
     final badgeBg = isOverOrReached
-        ? const Color(0xFFFEF2F2)
+        ? colorScheme.errorContainer
         : AppColors.primarySoft;
     final badgeText = isOverOrReached
         ? 'Batas tercapai'
@@ -135,8 +135,8 @@ class ExpenseLimitCard extends StatelessWidget {
                       style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: isOverOrReached
-                            ? const Color(0xFFB91C1C)
-                            : const Color(0xFF15803D),
+                            ? colorScheme.error
+                            : AppColors.success,
                       ),
                     ),
                   ],

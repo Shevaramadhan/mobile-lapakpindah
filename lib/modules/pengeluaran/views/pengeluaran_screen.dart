@@ -264,6 +264,7 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
     );
 
     if (result == null || !mounted) return;
+    final wasLimitReached = vm.isLimitReached;
     final ok = await vm.updateExpense(
       id: expense.id,
       description: result['description'] as String,
@@ -272,6 +273,12 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
       receiptPhotoPath: result['receiptPhotoPath'] as String?,
     );
     if (!mounted) return;
+    if (ok) {
+      vm.loadHistory();
+      if (!wasLimitReached && vm.isLimitReached) {
+        _showLimitWarningDialog();
+      }
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,

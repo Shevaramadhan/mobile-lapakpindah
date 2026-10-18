@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:lapakpindah/core/services/notification_service.dart';
 import 'package:lapakpindah/core/theme/app_theme.dart';
 import 'package:lapakpindah/modules/auth/view_models/auth_view_model.dart';
 import 'package:lapakpindah/modules/home/view_models/home_view_model.dart';
@@ -7,8 +8,9 @@ import 'package:lapakpindah/modules/sesi_lokasi/view_models/location_view_model.
 import 'package:lapakpindah/modules/pengeluaran/view_models/pengeluaran_view_model.dart';
 import 'package:lapakpindah/routes/app_routes.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().initialize();
   runApp(const LapakPindahApp());
 }
 

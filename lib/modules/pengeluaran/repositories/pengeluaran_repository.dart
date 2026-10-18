@@ -22,9 +22,110 @@ class PengeluaranException implements Exception {
 ///
 /// Menggunakan simulasi Future.delayed agar transisi state loading terlihat.
 class PengeluaranRepository {
+  static final PengeluaranRepository _instance = PengeluaranRepository._internal();
+  factory PengeluaranRepository() => _instance;
+  PengeluaranRepository._internal();
+
+  /// Reset state data ke seed awal (berguna untuk testing).
+  void resetForTesting() {
+    _activeSession = SessionInfo(
+      id: 'session-cfd-01',
+      locationId: 'loc-cfd',
+      locationName: 'CFD Jam Gadang',
+      openTime: DateTime(2026, 10, 13, 6, 10),
+      plannedCloseTime: DateTime(2026, 10, 13, 10, 30),
+    );
+    _limits.clear();
+    _limits['session-cfd-01'] = const ExpenseLimit(
+      sessionId: 'session-cfd-01',
+      limitAmount: 200000,
+    );
+    _expenses.clear();
+    _expenses.addAll([
+      Expense(
+        id: 'exp-01',
+        sessionId: 'session-cfd-01',
+        description: 'Gas LPG',
+        amount: 40000,
+        category: ExpenseCategory.operasional,
+        recordedAt: DateTime(2026, 10, 13, 9, 10),
+      ),
+      Expense(
+        id: 'exp-02',
+        sessionId: 'session-cfd-01',
+        description: 'Plastik dan sedotan',
+        amount: 25000,
+        category: ExpenseCategory.kemasan,
+        recordedAt: DateTime(2026, 10, 13, 8, 5),
+      ),
+      Expense(
+        id: 'exp-03',
+        sessionId: 'session-cfd-01',
+        description: 'Belanja es batu',
+        amount: 35000,
+        category: ExpenseCategory.bahanBaku,
+        recordedAt: DateTime(2026, 10, 13, 7, 25),
+      ),
+      Expense(
+        id: 'exp-04',
+        sessionId: 'session-cfd-01',
+        description: 'Retribusi',
+        amount: 10000,
+        category: ExpenseCategory.sewaRetribusi,
+        recordedAt: DateTime(2026, 10, 13, 6, 10),
+        isFixedCost: true,
+      ),
+      Expense(
+        id: 'exp-05',
+        sessionId: 'session-cfd-01',
+        description: 'Sewa tempat',
+        amount: 50000,
+        category: ExpenseCategory.sewaRetribusi,
+        recordedAt: DateTime(2026, 10, 13, 6, 10),
+        isFixedCost: true,
+      ),
+      Expense(
+        id: 'exp-h01',
+        sessionId: 'session-pasar-02',
+        description: 'Retribusi kebersihan',
+        amount: 5000,
+        category: ExpenseCategory.sewaRetribusi,
+        recordedAt: DateTime(2026, 10, 12, 7, 0),
+        isFixedCost: true,
+      ),
+      Expense(
+        id: 'exp-h02',
+        sessionId: 'session-pasar-02',
+        description: 'Bahan baku jeruk 5kg',
+        amount: 75000,
+        category: ExpenseCategory.bahanBaku,
+        recordedAt: DateTime(2026, 10, 12, 7, 30),
+      ),
+      Expense(
+        id: 'exp-h03',
+        sessionId: 'session-gor-03',
+        description: 'Sewa stan mingguan',
+        amount: 100000,
+        category: ExpenseCategory.sewaRetribusi,
+        recordedAt: DateTime(2026, 10, 11, 6, 0),
+        isFixedCost: true,
+      ),
+      Expense(
+        id: 'exp-h04',
+        sessionId: 'session-gor-03',
+        description: 'Cup plastik 100 pcs',
+        amount: 30000,
+        category: ExpenseCategory.kemasan,
+        recordedAt: DateTime(2026, 10, 11, 8, 15),
+      ),
+    ]);
+    _notifiedSessions.clear();
+  }
+
   // ── Sesi aktif saat ini (null jika tidak ada sesi berjalan) ──
   SessionInfo? _activeSession = SessionInfo(
     id: 'session-cfd-01',
+    locationId: 'loc-cfd',
     locationName: 'CFD Jam Gadang',
     openTime: DateTime(2026, 10, 13, 6, 10),
     plannedCloseTime: DateTime(2026, 10, 13, 10, 30),
@@ -124,18 +225,21 @@ class PengeluaranRepository {
   final List<SessionInfo> _allSessions = [
     SessionInfo(
       id: 'session-cfd-01',
+      locationId: 'loc-cfd',
       locationName: 'CFD Jam Gadang',
       openTime: DateTime(2026, 10, 13, 6, 10),
       plannedCloseTime: DateTime(2026, 10, 13, 10, 30),
     ),
     SessionInfo(
       id: 'session-pasar-02',
+      locationId: 'loc-pasar',
       locationName: 'Pasar Atas Bukittinggi',
       openTime: DateTime(2026, 10, 12, 6, 30),
       plannedCloseTime: DateTime(2026, 10, 12, 12, 0),
     ),
     SessionInfo(
       id: 'session-gor-03',
+      locationId: 'loc-gor',
       locationName: 'GOR Agus Salim',
       openTime: DateTime(2026, 10, 11, 5, 45),
       plannedCloseTime: DateTime(2026, 10, 11, 11, 0),
@@ -281,6 +385,10 @@ class PengeluaranRepository {
     );
 
     _expenses[index] = updated;
+
+    // FR-10: Cek apakah perubahan nominal menyebabkan batas tercapai
+    await _checkAndTriggerLimitNotification(old.sessionId);
+
     return updated;
   }
 
@@ -354,6 +462,8 @@ class PengeluaranRepository {
       limitAmount: limitAmount,
     );
     _limits[sessionId] = limit;
+    // FR-10: Cek apakah penurunan batas menyebabkan total saat ini mencapai/melewati batas
+    await _checkAndTriggerLimitNotification(sessionId);
     return limit;
   }
 
