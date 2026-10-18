@@ -1,6 +1,6 @@
 # Panduan ujian Modul 4 — FR-17 dan FR-18
 
-Dokumen ini menjelaskan **kode yang benar-benar ada di branch `sheva`**. Fokus demo Practical Challenge adalah satu workflow FR-18: `Evaluasi → Kelola Target → isi dan validasi → simpan → hasil → kembali ke Evaluasi`. FR-17 adalah layar awal dan tempat melihat hasil. Ketentuan tugas ada di `docs/codeReview/PRACTICAL CHALLENGE - Tugas Individu (2).md`; code review meminta mahasiswa memahami kode, menunjukkan perubahan kecil, dan membuat prompt AI yang tepat.
+Dokumen ini menjelaskan **kode yang benar-benar ada di branch `modul4-evaluasi-lokasi`**. Fokus demo Practical Challenge adalah satu workflow FR-18: `Evaluasi → Kelola Target → isi dan validasi → simpan → hasil → kembali ke Evaluasi`. FR-17 adalah layar awal dan tempat melihat hasil. Ketentuan tugas ada di `docs/codeReview/PRACTICAL CHALLENGE - Tugas Individu (2).md`; code review meminta mahasiswa memahami kode, menunjukkan perubahan kecil, dan membuat prompt AI yang tepat.
 
 ## Peta folder project dari luar ke dalam
 
@@ -172,11 +172,11 @@ Sebelum ujian, pastikan HP muncul di `flutter devices`. Jika tidak muncul, perik
 | Ubah aturan status tercapai | Perhitungan `averageFor` dan perbandingan di `_targetCard` | Uji dengan sesi/target contoh; jangan ubah tanpa menjelaskan aturan PRD. |
 | Ubah route/hasil kembali | `app_routes.dart`, `_submit`, `_openTarget`, `target_result_screen.dart` | Jalankan alur dari awal sampai kartu target diperbarui. |
 
-Contoh prompt AI yang baik saat diminta dosen: “Di aplikasi Flutter `lapakpindah` branch `sheva`, ubah batas minimum target laba FR-18 dari Rp100.000 menjadi Rp150.000. Pertahankan target per sesi, format Rupiah, arsitektur MVVM/Provider, validasi form dan repository, serta pesan UI. Tunjukkan file yang diubah, jelaskan alasannya, lalu jalankan `flutter analyze` dan tes yang terkait. Jangan mengubah fitur modul lain.” Setelah AI mengubah kode, baca diff dan jelaskan dengan kata-katamu sendiri.
+Contoh prompt AI yang baik saat diminta dosen: “Di aplikasi Flutter `lapakpindah` branch `modul4-evaluasi-lokasi`, ubah batas minimum target laba FR-18 dari Rp100.000 menjadi Rp150.000. Pertahankan target per sesi, format Rupiah, arsitektur MVVM/Provider, validasi form dan repository, serta pesan UI. Tunjukkan file yang diubah, jelaskan alasannya, lalu jalankan `flutter analyze` dan tes yang terkait. Jangan mengubah fitur modul lain.” Setelah AI mengubah kode, baca diff dan jelaskan dengan kata-katamu sendiri.
 
 ## Pemeriksaan sebelum giliran
 
-- Laptop menyala, VS Code terbuka pada folder `lapakpindah`, branch `sheva`.
+- Laptop menyala, VS Code terbuka pada folder `lapakpindah`, branch `modul4-evaluasi-lokasi`.
 - `flutter devices` menampilkan Android yang akan dipakai, lalu aplikasi sudah berjalan di sana.
 - `flutter analyze` dan `flutter test` selesai tanpa kegagalan.
 - Alur kosong → gagal validasi → berhasil simpan → hasil → kembali bisa dilakukan tanpa membaca skrip.
