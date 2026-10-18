@@ -23,7 +23,7 @@ class LapakTextField extends StatelessWidget {
     this.maxLines = 1,
     this.onFieldSubmitted,
     this.onChanged,
-
+    this.autovalidateMode,
   });
 
   // ── Label & isi ──
@@ -40,7 +40,7 @@ class LapakTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final ValueChanged<String>? onChanged;
-
+  final AutovalidateMode? autovalidateMode;
 
   /// false = field dikunci (misal saat proses login berjalan).
   final bool enabled;
@@ -97,6 +97,7 @@ class LapakTextField extends StatelessWidget {
         TextFormField(
           controller: controller,
           obscureText: obscureText,
+          autovalidateMode: autovalidateMode,
           validator: validator,
           keyboardType: keyboardType,
           enabled: enabled,

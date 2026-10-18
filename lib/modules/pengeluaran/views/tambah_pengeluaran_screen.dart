@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/core/widgets/custom_button.dart';
@@ -47,6 +48,7 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
     super.dispose();
   }
 
+  // ═══ [INPUT/EVENT] User mengetik keterangan ═══
   // ── Handlers isi form (sinkronkan ke ViewModel + tombol Simpan) ──
 
   void _onDescriptionChanged(String value) {
@@ -55,6 +57,7 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
     _updateCanSave(vm);
   }
 
+  // ═══ [INPUT/EVENT] User mengetik nominal ═══
   void _onAmountChanged(String value) {
     final vm = context.read<TambahPengeluaranViewModel>();
     vm.setAmountText(value);
@@ -66,6 +69,7 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
     if (next != _canSave) setState(() => _canSave = next);
   }
 
+  // ═══ [EVENT] User tekan tombol Simpan ═══
   // ── Event: tombol Simpan ditekan ──
 
   Future<void> _save(TambahPengeluaranViewModel vm) async {
@@ -77,6 +81,7 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
     if (!mounted) return;
 
     if (saved != null) {
+      // ═══ [NAVIGATION/RESULT] Kembali + kirim objek Expense ke layar sebelumnya ═══
       Navigator.pop(context, saved);
     }
   }
@@ -91,7 +96,6 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Form(
               key: _formKey,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -101,6 +105,8 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
                     controller: _descriptionController,
                     maxLength: _descriptionMaxLength,
                     enabled: !vm.isSaving,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    // ═══ [VALIDATION] Validator keterangan dipasang ke field ═══
                     validator: vm.validateDescription,
                     onChanged: _onDescriptionChanged,
                     onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
@@ -116,7 +122,10 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
                     onChanged: _onAmountChanged,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    // ═══ [VALIDATION] Validator nominal dipasang ke field ═══
                     validator: vm.validateAmount,
+                    // ═══ [VALIDATION] Input formatter: hanya angka ═══
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
                     ],
@@ -131,9 +140,11 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
                   _buildHintBanner(textTheme),
                   if (vm.saveError != null) ...[
                     const SizedBox(height: AppSpacing.md),
+                    // ═══ [FEEDBACK] Banner error jika gagal simpan ═══
                     ErrorBanner(message: vm.saveError!),
                   ],
                   const SizedBox(height: AppSpacing.xl),
+                  // ═══ [FEEDBACK] Tombol: Menyimpan.../Error/Simpan ═══
                   LapakPrimaryButton(
                     label: vm.isSaving
                         ? 'Menyimpan...'
@@ -175,35 +186,67 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
     );
   }
 
+  // ═══ [INPUT/EVENT + DEVICE] Ambil foto nota via Kamera (FR-07) ═══
+  // ── Event: ambil foto nota (FR-07 Device Kamera) ──
+
+  Future<void> _pickReceiptPhoto(TambahPengeluaranViewModel vm) async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 80,
+      );
+      if (picked == null) return; // user batal
+      if (!mounted) return;
+      vm.setReceiptPhotoPath(picked.path);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto nota berhasil diambil')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal membuka kamera. Coba lagi.')),
+      );
+    }
+  }
+
   Widget _buildReceiptBox(TambahPengeluaranViewModel vm) {
     final textTheme = Theme.of(context).textTheme;
+    final hasPhoto = vm.receiptPhotoPath != null;
     return GestureDetector(
-      onTap: vm.isSaving
-          ? null
-          : () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur foto nota belum tersedia di demo ini'),
-                ),
-              ),
+      onTap: vm.isSaving ? null : () => _pickReceiptPhoto(vm),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
+            color: hasPhoto
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outlineVariant,
             width: 1.5,
           ),
         ),
-        child: Column(
-          children: [
-            const Icon(Icons.camera_alt_outlined, size: 28, color: Color(0xFF9CA3AF)),
-            const SizedBox(height: 8),
-            Text('Bukti nota (opsional)', style: textTheme.labelLarge),
-            const SizedBox(height: 2),
-            Text('Tekan untuk mengambil foto', style: textTheme.bodySmall),
-          ],
-        ),
+        child: hasPhoto
+            ? Column(
+                children: [
+                  const Icon(Icons.check_circle, size: 28, color: Color(0xFF16A34A)),
+                  const SizedBox(height: 8),
+                  Text('Foto nota terpasang', style: textTheme.labelLarge),
+                  const SizedBox(height: 2),
+                  Text('Tekan untuk ganti foto', style: textTheme.bodySmall),
+                ],
+              )
+            : Column(
+                children: [
+                  const Icon(Icons.camera_alt_outlined, size: 28, color: Color(0xFF9CA3AF)),
+                  const SizedBox(height: 8),
+                  Text('Bukti nota (opsional)', style: textTheme.labelLarge),
+                  const SizedBox(height: 2),
+                  Text('Tekan untuk mengambil foto', style: textTheme.bodySmall),
+                ],
+              ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:lapakpindah/core/utils/view_status.dart';
 import 'package:lapakpindah/modules/pengeluaran/models/expense.dart';
 import 'package:lapakpindah/modules/pengeluaran/models/expense_limit.dart';
+import 'package:lapakpindah/modules/pengeluaran/models/location_fixed_cost.dart';
 import 'package:lapakpindah/modules/pengeluaran/models/session_info.dart';
 import 'package:lapakpindah/modules/pengeluaran/repositories/pengeluaran_repository.dart';
 
@@ -36,6 +37,10 @@ class PengeluaranViewModel extends ChangeNotifier {
   List<ExpenseHistoryGroup> _historyGroups = [];
   ViewStatus _historyStatus = ViewStatus.loading;
 
+  /// Daftar biaya tetap seluruh lokasi (FR-08).
+  List<LocationFixedCost> _fixedCosts = [];
+  ViewStatus _fixedCostsStatus = ViewStatus.loading;
+
   // ── Getter untuk UI ──
   ViewStatus get status => _status;
   String get errorMessage => _errorMessage;
@@ -59,10 +64,16 @@ class PengeluaranViewModel extends ChangeNotifier {
   List<ExpenseHistoryGroup> get historyGroups => _historyGroups;
   ViewStatus get historyStatus => _historyStatus;
 
+  /// Daftar biaya tetap lokasi (FR-08).
+  List<LocationFixedCost> get fixedCosts => _fixedCosts;
+  ViewStatus get fixedCostsStatus => _fixedCostsStatus;
+
+  // ═══ [STATE] Kalkulasi total pengeluaran sesi ═══
   /// Total seluruh pengeluaran sesi aktif.
   double get totalExpense =>
       _expenses.fold(0, (sum, expense) => sum + expense.amount);
 
+  // ═══ [STATE] Kalkulasi sisa batas ═══
   /// Sisa batas pengeluaran (tidak pernah negatif).
   double get remainingLimit {
     final limitAmount = _limit?.limitAmount;
@@ -71,6 +82,7 @@ class PengeluaranViewModel extends ChangeNotifier {
     return sisa < 0 ? 0 : sisa;
   }
 
+  // ═══ [STATE] Kalkulasi persentase pemakaian batas (0-100) ═══
   /// Persentase pemakaian batas (0–100). 0 jika belum ada batas.
   double get usagePercent {
     final limitAmount = _limit?.limitAmount;
@@ -79,6 +91,7 @@ class PengeluaranViewModel extends ChangeNotifier {
     return percent > 100 ? 100 : percent;
   }
 
+  // ═══ [STATE] Flag: apakah total sudah tembus batas? (FR-09) ═══
   /// true jika total pengeluaran sudah mencapai/melewati batas (FR-10).
   bool get isLimitReached {
     final limitAmount = _limit?.limitAmount;
@@ -114,6 +127,7 @@ class PengeluaranViewModel extends ChangeNotifier {
 
   // ── Setelah form berhasil menyimpan (Frame 10) ──
 
+  // ═══ [RESULT] Item baru langsung diselipkan ke daftar tanpa reload ═══
   /// Menambahkan pengeluaran baru ke state sehingga daftar & total langsung
   /// berubah tanpa memuat ulang dari repository (feedback instan).
   void applyNewExpense(Expense expense) {
@@ -148,6 +162,51 @@ class PengeluaranViewModel extends ChangeNotifier {
     }
   }
 
+  // ── Update & Delete pengeluaran (FR-06) ──
+
+  /// Mengubah pengeluaran. Mengembalikan true jika berhasil.
+  Future<bool> updateExpense({
+    required String id,
+    required String description,
+    required double amount,
+    ExpenseCategory? category,
+    String? receiptPhotoPath,
+  }) async {
+    try {
+      final updated = await _repository.updateExpense(
+        id: id,
+        description: description,
+        amount: amount,
+        category: category,
+        receiptPhotoPath: receiptPhotoPath,
+      );
+      final index = _expenses.indexWhere((e) => e.id == id);
+      if (index != -1) {
+        _expenses = [..._expenses]..[index] = updated;
+      }
+      notifyListeners();
+      return true;
+    } on PengeluaranException catch (e) {
+      _errorMessage = e.message;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Menghapus pengeluaran. Mengembalikan true jika berhasil.
+  Future<bool> deleteExpense(String id) async {
+    try {
+      await _repository.deleteExpense(id);
+      _expenses = _expenses.where((e) => e.id != id).toList();
+      notifyListeners();
+      return true;
+    } on PengeluaranException catch (e) {
+      _errorMessage = e.message;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // ── Filter kategori (FR-07) ──
 
   /// Memilih kategori filter. null = tampilkan semua.
@@ -172,5 +231,60 @@ class PengeluaranViewModel extends ChangeNotifier {
       _historyStatus = ViewStatus.error;
     }
     notifyListeners();
+  }
+
+  // ── Biaya Tetap Lokasi (FR-08) ──
+
+  /// Memuat daftar biaya tetap seluruh lokasi.
+  Future<void> loadFixedCosts() async {
+    _fixedCostsStatus = ViewStatus.loading;
+    notifyListeners();
+
+    try {
+      _fixedCosts = await _repository.fetchAllFixedCosts();
+      _fixedCostsStatus = ViewStatus.success;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _fixedCostsStatus = ViewStatus.error;
+    }
+    notifyListeners();
+  }
+
+  /// Menambah biaya tetap baru untuk lokasi. Mengembalikan true jika berhasil.
+  Future<bool> addFixedCost({
+    required String locationId,
+    required String locationName,
+    required String description,
+    required double amount,
+  }) async {
+    try {
+      final newFc = await _repository.addLocationFixedCost(
+        locationId: locationId,
+        locationName: locationName,
+        description: description,
+        amount: amount,
+      );
+      _fixedCosts = [..._fixedCosts, newFc];
+      notifyListeners();
+      return true;
+    } on PengeluaranException catch (e) {
+      _errorMessage = e.message;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Menghapus biaya tetap lokasi. Mengembalikan true jika berhasil.
+  Future<bool> deleteFixedCost(String id) async {
+    try {
+      await _repository.deleteLocationFixedCost(id);
+      _fixedCosts = _fixedCosts.where((fc) => fc.id != id).toList();
+      notifyListeners();
+      return true;
+    } on PengeluaranException catch (e) {
+      _errorMessage = e.message;
+      notifyListeners();
+      return false;
+    }
   }
 }

@@ -18,6 +18,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
   /// Sesi tujuan pencatatan pengeluaran (dikirim dari layar Daftar).
   final String sessionId;
 
+  // ═══ [STATE] Variabel state form Tambah Pengeluaran ═══
   // ── State form ──
   String _description = '';
   String _amountText = '';
@@ -37,6 +38,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
   /// Nominal hasil parsing. 0 jika teks belum berisi angka.
   double get amount => _parseAmount(_amountText);
 
+  // ═══ [VALIDATION] Tombol Simpan aktif hanya jika valid ═══
   /// Tombol Simpan aktif hanya jika form terisi (Frame 7: tombol nonaktif).
   bool get canSave =>
       !_isSaving && _description.trim().isNotEmpty && amount > 0;
@@ -70,6 +72,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
 
   // ── Validation (dipakai validator TextFormField) ──
 
+  // ═══ [VALIDATION] Validasi keterangan (lapis 1 - ViewModel) ═══
   /// Keterangan wajib diisi.
   String? validateDescription(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -78,6 +81,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
     return null;
   }
 
+  // ═══ [VALIDATION] Validasi nominal (lapis 1 - ViewModel) ═══
   /// Jumlah wajib diisi dan harus lebih dari Rp 0.
   String? validateAmount(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -92,6 +96,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
 
   // ── Event: tombol Simpan ditekan ──
 
+  // ═══ [EVENT → PROSES] Tombol Simpan ditekan ═══
   /// Menyimpan pengeluaran. Mengembalikan objek [Expense] jika berhasil,
   /// atau null jika gagal (pesan tersedia di [saveError]).
   Future<Expense?> save() async {
@@ -127,6 +132,7 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ═══ [PARSING] Konversi teks "20.000" → angka 20000 ═══
   /// "20.000" / "20000" / "Rp 20.000" → 20000.
   static double _parseAmount(String raw) {
     final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
