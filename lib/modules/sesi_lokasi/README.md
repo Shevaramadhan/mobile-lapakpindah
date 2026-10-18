@@ -56,7 +56,9 @@ sesi_lokasi/
 
 ## Practical Challenge: alur "Tambah Lokasi" (sudah dibuat)
 Data lokasi sementara disimpan **di memori** (`LocationRepository._locations`): daftar kosong saat
-aplikasi dibuka, dan kosong lagi setiap aplikasi dijalankan ulang. GPS (FR-02) menyusul.
+aplikasi dibuka, dan kosong lagi setiap aplikasi dijalankan ulang. GPS (FR-02) menyusul:
+bagian **Koordinat lokasi** di form (`views/widgets/coordinate_section.dart`) masih tampilan saja —
+kotak peta berisi pesan "Peta belum tersedia" dan tombol "Ambil lokasi saat ini" hanya memunculkan SnackBar.
 
 | Tahap | Yang terjadi | Kode |
 |---|---|---|

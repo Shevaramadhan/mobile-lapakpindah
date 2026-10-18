@@ -32,7 +32,7 @@ void main() {
       final repository = LocationRepository();
       await repository.add(name: 'Pasar Kaget');
       expect(
-        () => repository.add(name: 'pasar  KAGET'),
+        () => repository.add(name: ' PASAR kaget '),
         throwsA(isA<LocationException>()),
       );
     });
@@ -97,5 +97,13 @@ void main() {
     await tester.tap(find.text('Simpan lokasi'));
     await tester.pump();
     expect(find.text('Nama tempat sudah dipakai lokasi lain'), findsOneWidget);
+
+    // Bagian koordinat (tampilan saja): tombol GPS hanya memberi pesan
+    expect(find.text('Peta belum tersedia'), findsOneWidget);
+    await tester.ensureVisible(find.text('Ambil lokasi saat ini'));
+    await tester.pump();
+    await tester.tap(find.text('Ambil lokasi saat ini'));
+    await tester.pump();
+    expect(find.textContaining('Fitur GPS belum tersedia'), findsOneWidget);
   });
 }
