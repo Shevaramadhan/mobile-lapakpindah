@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/modules/home/views/home_screen.dart';
 import 'package:lapakpindah/modules/sesi_lokasi/views/location_list_screen.dart';
+import 'package:lapakpindah/modules/pengeluaran/views/pengeluaran_screen.dart';
 
 /// Screen utama setelah login: bottom navigation 5 tab.
 ///
@@ -39,11 +40,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         children: [
           HomeScreen(onNavigateToTab: _onTabSelected),
           const LocationListScreen(), // Modul 1: Daftar Lokasi
-          const _PlaceholderTab(
-            title: 'Pengeluaran',
-            module: 'Modul 2',
-            icon: Icons.receipt_long_outlined,
-          ),
+          PengeluaranScreen(
+            onNavigateToLocationTab: () => _onTabSelected(1),
+          ), // Modul 2: Daftar Pengeluaran
           const _PlaceholderTab(
             title: 'Penjualan',
             module: 'Modul 3',

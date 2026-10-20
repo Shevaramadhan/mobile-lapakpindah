@@ -114,7 +114,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Form(
             key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -205,6 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               enabled: !isLoading,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: Validators.phoneOrEmail,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -221,6 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               maxLength: 6,
               enabled: !isLoading,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               trailingLabel: 'Lupa PIN?',
               onTrailingTap: _handleForgotPin,
               onFieldSubmitted: (_) => _handleLogin(),

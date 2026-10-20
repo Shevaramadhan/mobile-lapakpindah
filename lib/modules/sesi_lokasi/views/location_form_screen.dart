@@ -114,7 +114,6 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Form(
               key: _formKey,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -131,6 +130,7 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
                     controller: _nameController,
                     enabled: !vm.isSaving,
                     textInputAction: TextInputAction.next,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: _validateName,
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -143,6 +143,7 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
                     enabled: !vm.isSaving,
                     maxLines: 3,
                     keyboardType: TextInputType.multiline,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: (value) => Validators.maxLength(
                       value,
                       _noteMaxLength,

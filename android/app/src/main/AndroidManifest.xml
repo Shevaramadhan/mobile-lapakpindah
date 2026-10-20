@@ -1,6 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Internet: untuk memuat peta OpenStreetMap di dashboard -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Notifikasi lokal (FR-05, FR-10, FR-15, FR-20, Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Kamera perangkat untuk foto nota (FR-07) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- GPS perangkat untuk koordinat lokasi (FR-02) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
 
     <application
         android:label="lapakpindah"

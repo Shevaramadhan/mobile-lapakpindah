@@ -76,6 +76,7 @@ class _LocationListScreenState extends State<LocationListScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-lokasi',
         tooltip: 'Tambah lokasi',
         onPressed: _openAddForm,
         child: const Icon(Icons.add),
