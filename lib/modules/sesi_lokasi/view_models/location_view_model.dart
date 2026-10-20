@@ -8,7 +8,9 @@ import 'package:lapakpindah/modules/sesi_lokasi/repositories/location_repository
 /// lewat `notifyListeners()` setiap kali state berubah.
 class LocationViewModel extends ChangeNotifier {
   // ── Sumber data ──
-  final _repository = LocationRepository();
+  LocationViewModel({LocationRepository? repository})
+    : _repository = repository ?? LocationRepository();
+  final LocationRepository _repository;
 
   // ── State daftar lokasi ──
   ViewStatus _status = ViewStatus.loading;

@@ -4,6 +4,9 @@ import 'package:lapakpindah/modules/auth/views/login_screen.dart';
 import 'package:lapakpindah/modules/auth/views/register_placeholder_screen.dart';
 import 'package:lapakpindah/modules/home/views/main_navigation_screen.dart';
 import 'package:lapakpindah/modules/sesi_lokasi/views/location_form_screen.dart';
+import 'package:lapakpindah/modules/evaluasi_lokasi/models/profit_target.dart';
+import 'package:lapakpindah/modules/evaluasi_lokasi/views/profit_target_form_screen.dart';
+import 'package:lapakpindah/modules/evaluasi_lokasi/views/target_result_screen.dart';
 
 /// Satu tempat untuk seluruh route aplikasi (M4: Named Routes).
 ///
@@ -23,6 +26,28 @@ class AppRoutes {
   static const String home = '/home';
   static const String locationForm = '/lokasi/tambah'; // Modul 1
   static const String expenseForm = '/pengeluaran/tambah'; // Modul 2
+  static const String targetForm = '/evaluasi/target';
+  static const String targetResult = '/evaluasi/target/hasil';
+
+  /// Generic route harus sama dengan tipe result `pushNamed<T>` pemanggil.
+  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    if (settings.name == targetForm) {
+      return MaterialPageRoute<ProfitTarget>(
+        settings: settings,
+        builder: (_) => const ProfitTargetFormScreen(),
+      );
+    }
+    if (settings.name == targetResult) {
+      final args = settings.arguments;
+      return MaterialPageRoute<TargetResultAction>(
+        settings: settings,
+        builder: (_) => args is SavedTarget
+            ? TargetResultScreen(saved: args)
+            : NotFoundScreen(routeName: settings.name),
+      );
+    }
+    return null;
+  }
 
   // ── 2. Daftar route: nama → layar ──
   // Jika sebuah layar butuh data, kirim lewat `arguments` lalu baca di

@@ -9,13 +9,15 @@ class LocationException implements Exception {
   String toString() => message;
 }
 
-/// Data layer lokasi .
-/// SEMENTARA: data disimpan di MEMORI (sebuah List), belum di database.
-
+/// Data layer lokasi (M3: lapisan Data pada MVVM).
+///
+/// Penyimpanan sementara selama aplikasi berjalan.
 class LocationRepository {
+  LocationRepository({List<Location> initialLocations = const []})
+    : _locations = List.of(initialLocations);
   // ── Penyimpanan di memori ──
-
-  final List<Location> _locations = [];
+  // Bukan `static`: list ikut hilang saat aplikasi ditutup.
+  final List<Location> _locations;
 
   // ── Read ──\
   Future<List<Location>> fetchAll() async {
@@ -32,6 +34,9 @@ class LocationRepository {
   // ── Create ──
   Future<Location> add({required String name, String? note}) async {
     await Future.delayed(const Duration(milliseconds: 600));
+    if (name.trim().isEmpty) {
+      throw const LocationException('Nama tempat wajib diisi');
+    }
 
     // Aturan data: nama lokasi harus unik (pengaman kedua setelah validasi form).
     if (isNameTaken(name)) {

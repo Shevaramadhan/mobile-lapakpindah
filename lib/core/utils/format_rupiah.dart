@@ -10,3 +10,8 @@ String formatRupiah(double amount) {
     decimalDigits: 0,
   ).format(amount);
 }
+
+/// Nominal ringkas untuk kartu evaluasi: Rp 450rb atau Rp 1,5jt.
+String formatCompactRupiah(double value) => value.abs() >= 1000000
+    ? 'Rp ${(value / 1000000).toStringAsFixed(1).replaceAll('.', ',')}jt'
+    : 'Rp ${(value / 1000).round()}rb';
