@@ -8,10 +8,7 @@ import 'package:lapakpindah/modules/sesi_lokasi/view_models/location_view_model.
 import 'package:lapakpindah/modules/sesi_lokasi/views/widgets/location_card.dart';
 import 'package:lapakpindah/routes/app_routes.dart';
 
-/// Layar Daftar Lokasi (tab "Lokasi", Figma M1·1).
-///
-/// Awal & akhir workflow Tambah Lokasi:
-/// tombol + membuka form, lalu menerima lokasi baru sebagai hasil (result).
+/// Layar Daftar Lokasi 
 class LocationListScreen extends StatefulWidget {
   const LocationListScreen({super.key});
 
@@ -31,8 +28,10 @@ class _LocationListScreenState extends State<LocationListScreen> {
 
   // ── Event: tombol + ditekan → buka form, tunggu hasilnya ──
   Future<void> _openAddForm() async {
+    // Bersihkan pesan gagal dari percobaan sebelumnya agar form mulai bersih.
+    context.read<LocationViewModel>().clearSaveError();
+
     // pushNamed mengembalikan Future yang selesai saat form ditutup.
-    // Isinya = data yang dikirim form lewat Navigator.pop(context, data).
     final result = await Navigator.pushNamed(context, AppRoutes.locationForm);
 
     // Setelah await, pastikan layar masih ada sebelum memakai context
@@ -84,30 +83,44 @@ class _LocationListScreenState extends State<LocationListScreen> {
     );
   }
 
-  // ── Daftar kartu lokasi ──
+  // ── Judul + daftar kartu lokasi ──
   Widget _buildList(List<Location> locations) {
-    return ListView.separated(
-      // Ruang bawah agar kartu terakhir tidak tertutup tombol +
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
-        88,
-      ),
-      // +1 untuk judul "Lokasi tersimpan (n)" di baris pertama
-      itemCount: locations.length + 1,
-      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Judul jumlah lokasi
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          child: Text(
             'Lokasi tersimpan (${locations.length})',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-          );
-        }
-        return LocationCard(location: locations[index - 1]);
-      },
+          ),
+        ),
+
+        // Expanded: daftar mengisi sisa tinggi layar dan bisa digulir
+        Expanded(
+          child: ListView.separated(
+            // Ruang bawah agar kartu terakhir tidak tertutup tombol +
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              88,
+            ),
+            itemCount: locations.length,
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+            itemBuilder: (context, index) =>
+                LocationCard(location: locations[index]),
+          ),
+        ),
+      ],
     );
   }
 }

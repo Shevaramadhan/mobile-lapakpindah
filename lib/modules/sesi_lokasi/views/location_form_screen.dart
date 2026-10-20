@@ -6,6 +6,7 @@ import 'package:lapakpindah/core/widgets/custom_button.dart';
 import 'package:lapakpindah/core/widgets/custom_text_field.dart';
 import 'package:lapakpindah/core/widgets/state_views.dart';
 import 'package:lapakpindah/modules/sesi_lokasi/view_models/location_view_model.dart';
+import 'package:lapakpindah/modules/sesi_lokasi/views/widgets/coordinate_section.dart';
 
 /// Layar Form Tambah Lokasi (Figma M1·2, tanpa bagian GPS).
 ///
@@ -31,15 +32,6 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
   final _noteController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    // Hapus pesan gagal dari percobaan sebelumnya (jika ada).
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => context.read<LocationViewModel>().clearSaveError(),
-    );
-  }
-
-  @override
   void dispose() {
     // Controller wajib dibuang saat layar ditutup agar tidak memory leak
     _nameController.dispose();
@@ -48,18 +40,43 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
   }
 
   // ── Validasi nama tempat ──
-  // Urutan: wajib & minimal 3 → maksimal 50 → belum dipakai lokasi lain.
+  // Satu aturan satu langkah; berhenti di aturan pertama yang dilanggar.
+  // return null = valid, return 'pesan' = tidak valid (pesan tampil di bawah isian).
   String? _validateName(String? value) {
     const field = 'Nama tempat';
-    final error =
-        Validators.minLength(value, _nameMinLength, fieldName: field) ??
-        Validators.maxLength(value, _nameMaxLength, fieldName: field);
-    if (error != null) return error;
 
+    // Aturan 1: wajib diisi & minimal 3 karakter
+    final minError = Validators.minLength(
+      value,
+      _nameMinLength,
+      fieldName: field,
+    );
+    if (minError != null) return minError;
+
+    // Aturan 2: maksimal 50 karakter
+    final maxError = Validators.maxLength(
+      value,
+      _nameMaxLength,
+      fieldName: field,
+    );
+    if (maxError != null) return maxError;
+
+    // Aturan 3: belum dipakai lokasi lain
     if (context.read<LocationViewModel>().isNameTaken(value!)) {
       return 'Nama tempat sudah dipakai lokasi lain';
     }
     return null;
+  }
+
+  // ── Event: tombol "Ambil lokasi saat ini" (GPS belum tersedia) ──
+  void _showGpsNotReady() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Fitur GPS belum tersedia. Lokasi tetap bisa disimpan tanpa koordinat.',
+        ),
+      ),
+    );
   }
 
   // ── Event: tombol Simpan ditekan ──
@@ -67,7 +84,7 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
     FocusScope.of(context).unfocus(); // tutup keyboard
 
     // 1. Validasi semua field; berhenti jika ada yang salah (tetap di form)
-    final isValid = _formKey.currentState?.validate() ?? false;
+    final isValid = _formKey.currentState!.validate();
     if (!isValid) return;
 
     // 2. Simpan lewat ViewModel (loading & error dikelola ViewModel)
@@ -132,6 +149,10 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
                       fieldName: 'Catatan',
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Bagian 3: koordinat (tampilan saja, GPS belum dipasang)
+                  CoordinateSection(onTakeLocation: _showGpsNotReady),
                 ],
               ),
             ),

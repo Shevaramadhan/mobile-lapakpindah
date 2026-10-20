@@ -1,13 +1,9 @@
-// foundation.dart (bukan material.dart): ViewModel hanya butuh ChangeNotifier,
-// tidak bergantung pada widget UI.
 import 'package:flutter/foundation.dart';
 import 'package:lapakpindah/core/utils/view_status.dart';
 import 'package:lapakpindah/modules/sesi_lokasi/models/location.dart';
 import 'package:lapakpindah/modules/sesi_lokasi/repositories/location_repository.dart';
 
-/// ViewModel lokasi (M3: MVVM).
-///
-/// View (Daftar & Form Lokasi) → ViewModel (kelas ini) → LocationRepository.
+
 /// Menyimpan state daftar lokasi dan proses simpan, lalu memberi tahu View
 /// lewat `notifyListeners()` setiap kali state berubah.
 class LocationViewModel extends ChangeNotifier {
@@ -49,15 +45,12 @@ class LocationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Validasi nama (dipakai validator form) ──
+  // ── Validasi nama ──
 
-  /// true jika nama sudah dipakai lokasi lain.
   bool isNameTaken(String name) => _repository.isNameTaken(name);
 
   // ── Menyimpan lokasi baru ──
 
-  /// Mengembalikan lokasi yang tersimpan, atau null jika gagal
-  /// (pesan gagal tersedia di [saveError]).
   Future<Location?> addLocation(String name, String note) async {
     // 1. Mulai proses: tombol Simpan menampilkan loading
     _isSaving = true;
