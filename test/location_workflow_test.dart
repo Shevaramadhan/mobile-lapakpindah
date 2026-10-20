@@ -43,7 +43,9 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    await tester.pumpWidget(const LapakPindahApp());
+    await tester.pumpWidget(
+      LapakPindahApp(locationRepository: LocationRepository()),
+    );
     await tester.pumpAndSettle();
 
     // Login akun demo

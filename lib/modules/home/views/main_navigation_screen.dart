@@ -3,12 +3,13 @@ import 'package:lapakpindah/core/theme/app_spacing.dart';
 import 'package:lapakpindah/modules/home/views/home_screen.dart';
 import 'package:lapakpindah/modules/sesi_lokasi/views/location_list_screen.dart';
 import 'package:lapakpindah/modules/pengeluaran/views/pengeluaran_screen.dart';
+import 'package:lapakpindah/modules/penjualan/views/sale_screen.dart';
 import 'package:lapakpindah/modules/evaluasi_lokasi/views/evaluation_screen.dart';
 
 /// Screen utama setelah login: bottom navigation 5 tab.
 ///
 /// Tab 0 = Beranda (dashboard). Tab 1 = Lokasi (Modul 1).
-/// Tab 2 = Biaya; tab 3 diisi Modul 3; tab 4 = Evaluasi (FR-17/FR-18).
+/// Tab 2 = Biaya; tab 3 = Penjualan; tab 4 = Evaluasi (FR-17/FR-18).
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -44,11 +45,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           PengeluaranScreen(
             onNavigateToLocationTab: () => _onTabSelected(1),
           ), // Modul 2: Daftar Pengeluaran
-          const _PlaceholderTab(
-            title: 'Penjualan',
-            module: 'Modul 3',
-            icon: Icons.shopping_bag_outlined,
-          ),
+          const SaleScreen(),
           EvaluationScreen(isActive: _currentIndex == 4),
         ],
       ),
@@ -139,45 +136,6 @@ class _NavItem extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Isi sementara untuk tab modul yang belum dikerjakan.
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({
-    required this.title,
-    required this.module,
-    required this.icon,
-  });
-
-  final String title;
-  final String module;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    // Gaya AppBar & latar layar dari tema
-    return Scaffold(
-      appBar: AppBar(automaticallyImplyLeading: false, title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 48,
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(title, style: textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            Text('Segera hadir — $module', style: textTheme.bodyMedium),
-          ],
         ),
       ),
     );

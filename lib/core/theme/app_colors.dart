@@ -18,6 +18,9 @@ class AppColors {
 
   /// Oranye muda: latar kotak ikon modul & kartu sesi (→ primaryContainer).
   static const Color primarySoft = Color(0xFFFBEEDD);
+  static const Color accentLight = Color(
+    0xFFFFDCC3,
+  ); // kartu ringkasan penjualan
 
   // ── Teks (→ onSurface / onSurfaceVariant) ──
   static const Color textPrimary = Color(0xFF111C2D);

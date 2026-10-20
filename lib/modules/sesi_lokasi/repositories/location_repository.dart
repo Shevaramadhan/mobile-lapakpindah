@@ -21,10 +21,10 @@ class LocationRepository {
 
   // ── Read ──\
   Future<List<Location>> fetchAll() async {
-
     await Future.delayed(const Duration(milliseconds: 300));
     return List.unmodifiable(_locations);
   }
+
   /// true jika nama sudah dipakai lokasi lain (huruf besar/kecil dianggap sama).
   bool isNameTaken(String name) {
     final key = _normalize(name);
