@@ -64,6 +64,9 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
     _updateCanSave(vm);
   }
 
+  // [SINKRONISASI STATE REAKTIF]
+  // Mengevaluasi getter vm.canSave ke state lokal _canSave via setState().
+  // Memicu build() untuk mengubah status tombol LapakPrimaryButton (disabled/enabled).
   void _updateCanSave(TambahPengeluaranViewModel vm) {
     final next = vm.canSave;
     if (next != _canSave) setState(() => _canSave = next);
@@ -144,7 +147,9 @@ class _TambahPengeluaranScreenState extends State<TambahPengeluaranScreen> {
                     ErrorBanner(message: vm.saveError!),
                   ],
                   const SizedBox(height: AppSpacing.xl),
-                  // ═══ [FEEDBACK] Tombol: Menyimpan.../Error/Simpan ═══
+                  // [TATA LETAK UI & MODIFIKASI POSISI TOMBOL]
+                  // Blok tombol ini yang dipindahkan ke atas Column children jika diminta modifikasi tata letak form.
+                  // onPressed bernilai null jika _canSave false (otomatis disabled abu-abu).
                   LapakPrimaryButton(
                     label: vm.isSaving
                         ? 'Menyimpan...'

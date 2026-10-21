@@ -44,7 +44,9 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
     final sessionId = vm.activeSessionId;
     if (sessionId == null) return;
     final wasLimitReached = vm.isLimitReached;
-    // ═══ [NAVIGATION] Push ke form, tunggu result Expense ═══
+    // ═══ [NAVIGATION: RESULT CONTRACT] Menunggu objek Expense hasil simpan form ═══
+    // Menggunakan Result Contract agar form mengembalikan data tersimpan secara langsung.
+    // Tidak perlu refetch database penuh, applyNewExpense menyisipkan ke list teratas (instant feedback).
     final result = await Navigator.of(context).push<Expense>(
       MaterialPageRoute(builder: (_) => ChangeNotifierProvider(
         create: (_) => TambahPengeluaranViewModel(sessionId: sessionId),

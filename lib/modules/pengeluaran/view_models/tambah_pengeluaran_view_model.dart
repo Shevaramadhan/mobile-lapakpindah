@@ -38,8 +38,9 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
   /// Nominal hasil parsing. 0 jika teks belum berisi angka.
   double get amount => _parseAmount(_amountText);
 
-  // ═══ [VALIDATION] Tombol Simpan aktif hanya jika valid ═══
-  /// Tombol Simpan aktif hanya jika form terisi (Frame 7: tombol nonaktif).
+  // [LOGIKA BISNIS VALIDASI: GETTER canSave]
+  // Evaluasi reaktif syarat form: keterangan tidak kosong, nominal > 0, dan tidak dalam proses simpan.
+  // Logika di ViewModel mematuhi SoC agar dapat diuji independen via Unit Test tanpa render UI.
   bool get canSave =>
       !_isSaving && _description.trim().isNotEmpty && amount > 0;
 
@@ -103,7 +104,8 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
   /// Menyimpan pengeluaran. Mengembalikan objek [Expense] jika berhasil,
   /// atau null jika gagal (pesan tersedia di [saveError]).
   Future<Expense?> save() async {
-    // ── Guard re-entry pencegah race condition / double-tap ──
+    // [DEFENSE-IN-DEPTH: GUARD RE-ENTRY / ANTI DOUBLE-TAP]
+    // Menolak pemanggilan kedua saat proses asynchronous pertama masih berjalan (isSaving true).
     if (_isSaving) return null;
 
     _isSaving = true;
@@ -138,8 +140,9 @@ class TambahPengeluaranViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ═══ [PARSING] Konversi teks "20.000" / "20.000,50" → angka 20000 ═══
-  /// "20.000" / "20000" / "Rp 20.000" / "20.000,50" → 20000.
+  // [SANITASI FORMAT NOMINAL: RUPIAH & SEN]
+  // Memotong bagian desimal koma (sen), membersihkan titik ribuan dengan regex, dan menolak minus.
+  // Mencegah FormatException pada penulisan angka format lokal Indonesia (misal: 20.000 atau 20.000,50).
   static double _parseAmount(String raw) {
     var trimmed = raw.trim();
     if (trimmed.startsWith('-')) return 0;
