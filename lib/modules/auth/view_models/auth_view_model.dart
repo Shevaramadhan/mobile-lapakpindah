@@ -80,7 +80,7 @@ class AuthViewModel extends ChangeNotifier {
   /// Logout dan hapus akun yang diingat.
   Future<void> logout() async {
     _user = null;
-    await _repository.forgetAccount();
+    await _repository.logout();
     notifyListeners();
   }
 
